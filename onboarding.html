@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#1E2428" />
   <title>Kennari — Setup</title>
   <link rel="stylesheet" href="style.css" />
@@ -34,16 +34,26 @@
       transform: scale(1.15);
     }
 
+    /* Clip slide animations horizontally */
+    .app-container {
+      overflow-x: hidden;
+    }
+
     /* ---- Steps ---- */
     .ob-step {
       display: none;
       flex-direction: column;
-      padding: 32px 28px 48px;
+      padding: 32px 28px calc(48px + env(safe-area-inset-bottom, 0px));
     }
 
     .ob-step.active {
       display: flex;
-      animation: fadeIn 0.3s ease forwards;
+      animation: slideInRight 350ms ease-in-out forwards;
+    }
+
+    /* Back direction — set by JS capture listener before step changes */
+    .going-back .ob-step.active {
+      animation: slideInLeft 350ms ease-in-out forwards;
     }
 
     /* ---- Typography ---- */
@@ -422,5 +432,18 @@
   </div><!-- .app-container -->
 
   <script type="module" src="onboarding.js"></script>
+
+  <!-- Capture-phase listener: sets direction class BEFORE onboarding.js
+       changes the active step, so the correct slide animation fires. -->
+  <script>
+    document.addEventListener('click', function (e) {
+      const container = document.querySelector('.app-container');
+      const backIds   = ['btn-back-2', 'btn-back-3', 'btn-back-4'];
+      const fwdIds    = ['btn-next-1', 'btn-next-2', 'btn-advance-3', 'btn-start'];
+      const id        = e.target.closest('button')?.id;
+      if (backIds.includes(id)) container.classList.add('going-back');
+      if (fwdIds.includes(id))  container.classList.remove('going-back');
+    }, true); // capture = true fires before module listener handlers
+  </script>
 </body>
 </html>
