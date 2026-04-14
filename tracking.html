@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1E2428" />
+  <title>Kennari — Tracking</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ---- Header ---- */
+    .tracking-header {
+      padding: 28px 24px 16px;
+    }
+
+    .tracking-title {
+      font-family: 'DM Sans', sans-serif;
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      color: var(--cream);
+      line-height: 1.15;
+    }
+
+    /* ---- Main scroll area ---- */
+    .tracking-main {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 80px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* ---- Exercise pill selector ---- */
+    .ex-selector-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding: 0 24px;
+    }
+
+    .ex-selector-wrap::-webkit-scrollbar { display: none; }
+
+    .ex-selector {
+      display: flex;
+      gap: 8px;
+      width: max-content;
+      padding: 4px 0;
+    }
+
+    .ex-pill {
+      padding: 8px 18px;
+      border-radius: var(--radius-pill);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: var(--text-sm);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .ex-pill.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--cream);
+    }
+
+    /* ---- Chart card ---- */
+    .chart-card {
+      margin: 0 24px;
+      padding: 16px 16px 12px;
+    }
+
+    .chart-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    /* Time range toggle */
+    .time-toggle {
+      display: flex;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+      overflow: hidden;
+    }
+
+    .time-btn {
+      padding: 5px 12px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: var(--text-xs);
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: color 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .time-btn.active {
+      color: var(--accent);
+    }
+
+    /* Chart empty state */
+    .chart-empty {
+      text-align: center;
+      padding: 28px 16px 20px;
+      color: var(--text-muted);
+      font-size: var(--text-sm);
+      line-height: 1.6;
+      display: none;
+    }
+
+    /* ---- Goal card ---- */
+    .goal-card {
+      margin: 0 24px;
+      padding: 16px 20px 18px;
+    }
+
+    .goal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      gap: 12px;
+    }
+
+    .goal-exercise-name {
+      font-size: var(--text-base);
+      font-weight: 600;
+      color: var(--cream);
+      margin-top: 3px;
+    }
+
+    .btn-edit-goal {
+      font-size: var(--text-xs);
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 2px 0;
+      white-space: nowrap;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+      transition: opacity 0.15s ease;
+    }
+
+    .btn-edit-goal:hover { opacity: 0.75; }
+
+    /* Edit row */
+    .goal-edit-row {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .goal-input-wrap {
+      position: relative;
+      flex: 1;
+    }
+
+    .goal-input {
+      height: 44px;
+      padding-right: 46px;
+    }
+
+    .goal-edit-unit {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .goal-save-btn {
+      width: auto;
+      height: 44px;
+      padding: 0 20px;
+      flex-shrink: 0;
+    }
+
+    /* Progress bar */
+    .goal-bar-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .goal-bar-track {
+      flex: 1;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .goal-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 3px;
+      transition: width 0.7s ease;
+    }
+
+    .goal-pct {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: var(--text-lg);
+      color: var(--accent);
+      min-width: 38px;
+      text-align: right;
+      line-height: 1;
+    }
+
+    .goal-desc {
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      line-height: 1.5;
+      letter-spacing: 0.01em;
+    }
+
+    /* ---- Personal best card ---- */
+    .pb-card {
+      margin: 0 24px;
+      padding: 16px 20px 18px;
+    }
+
+    .pb-display {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .pb-number {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 52px;
+      color: var(--accent);
+      line-height: 1;
+      letter-spacing: 0.02em;
+    }
+
+    .pb-unit {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      padding-bottom: 8px;
+    }
+
+    .pb-reps {
+      margin-top: 2px;
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+
+    <!-- ── Header ─────────────────────────────────────── -->
+    <header class="tracking-header">
+      <h1 class="tracking-title">Your Progress</h1>
+    </header>
+
+    <!-- ── Main content ───────────────────────────────── -->
+    <main class="tracking-main">
+
+      <!-- Exercise pill selector -->
+      <div class="ex-selector-wrap">
+        <div class="ex-selector" role="tablist" aria-label="Select exercise">
+          <button class="ex-pill active" data-ex="squat"    role="tab" type="button">Squat</button>
+          <button class="ex-pill"        data-ex="press"    role="tab" type="button">Press</button>
+          <button class="ex-pill"        data-ex="bench"    role="tab" type="button">Bench Press</button>
+          <button class="ex-pill"        data-ex="deadlift" role="tab" type="button">Deadlift</button>
+        </div>
+      </div>
+
+      <!-- Chart card -->
+      <div class="card chart-card">
+        <div class="chart-top">
+          <span class="label-caps">Working Weight</span>
+          <div class="time-toggle" role="group" aria-label="Time range">
+            <button class="time-btn"        data-range="4w"  type="button">4W</button>
+            <button class="time-btn active" data-range="8w"  type="button">8W</button>
+            <button class="time-btn"        data-range="all" type="button">ALL</button>
+          </div>
+        </div>
+
+        <p id="chart-empty" class="chart-empty">
+          Keep training — your chart will appear here soon.
+        </p>
+        <canvas id="progress-chart"></canvas>
+      </div>
+
+      <!-- Goal card -->
+      <div class="card goal-card">
+        <div class="goal-header">
+          <div>
+            <span class="label-caps">Your Goal</span>
+            <p id="goal-exercise-name" class="goal-exercise-name">Squat</p>
+          </div>
+          <button id="btn-edit-goal" class="btn-edit-goal" type="button">Edit goal</button>
+        </div>
+
+        <!-- Inline edit (hidden by default) -->
+        <div id="goal-edit-row" class="goal-edit-row">
+          <div class="goal-input-wrap">
+            <input
+              id="goal-input"
+              type="number"
+              class="input-field goal-input"
+              inputmode="decimal"
+              placeholder="Target weight"
+            />
+            <span id="goal-edit-unit" class="goal-edit-unit">LBS</span>
+          </div>
+          <button id="btn-save-goal" class="btn-primary goal-save-btn" type="button">Save</button>
+        </div>
+
+        <!-- Goal display -->
+        <div id="goal-display">
+          <div class="goal-bar-wrap">
+            <div class="goal-bar-track">
+              <div id="goal-bar-fill" class="goal-bar-fill" style="width:0%"></div>
+            </div>
+            <span id="goal-pct" class="goal-pct">—</span>
+          </div>
+          <p id="goal-desc" class="goal-desc"></p>
+        </div>
+      </div>
+
+      <!-- Personal best card -->
+      <div class="card pb-card">
+        <span class="label-caps">Personal Best</span>
+        <div class="pb-display">
+          <span id="pb-number" class="pb-number">—</span>
+          <span id="pb-unit"   class="pb-unit"></span>
+        </div>
+        <p id="pb-reps" class="pb-reps"></p>
+      </div>
+
+    </main>
+
+    <!-- ── Bottom nav ──────────────────────────────────── -->
+    <nav class="bottom-nav">
+
+      <button class="nav-tab" type="button"
+              onclick="location.href='workout.html'" aria-label="Workout">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <rect x="9"    y="11"  width="6"   height="2"/>
+          <rect x="1"    y="8"   width="7.5" height="8" rx="2.5"/>
+          <rect x="15.5" y="8"   width="7.5" height="8" rx="2.5"/>
+        </svg>
+        <span>Workout</span>
+      </button>
+
+      <button class="nav-tab active" type="button"
+              onclick="location.href='tracking.html'" aria-label="Tracking">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.2" stroke-linecap="round">
+          <line x1="18" y1="20" x2="18" y2="10"/>
+          <line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6"  y1="20" x2="6"  y2="14"/>
+        </svg>
+        <span>Tracking</span>
+      </button>
+
+      <button class="nav-tab" type="button"
+              onclick="location.href='settings.html'" aria-label="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83
+                   M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+        </svg>
+        <span>Settings</span>
+      </button>
+
+    </nav>
+
+  </div><!-- .app-container -->
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="module" src="tracking.js"></script>
+</body>
+</html>

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1E2428" />
+  <title>Kennari</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ---- Header ---- */
+    .home-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 32px 24px 12px;
+    }
+
+    .home-wordmark {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      color: var(--cream);
+      letter-spacing: 0.06em;
+      line-height: 1;
+    }
+
+    .icon-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 2px;
+      transition: color 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+      text-decoration: none;
+    }
+
+    .icon-btn:hover { color: var(--cream); }
+
+    /* ---- Main: fills remaining height, spreads blocks evenly ---- */
+    .home-main {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      /* bottom padding = nav (64px) + CTA area (84px) */
+      padding: 12px 24px 148px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* ---- Fixed CTA above nav ---- */
+    .cta-area {
+      position: fixed;
+      bottom: 64px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      padding: 16px 24px 12px;
+      background: linear-gradient(to top, var(--bg) 65%, transparent);
+      z-index: 50;
+    }
+
+    /* ---- Greeting ---- */
+    .greeting-block {
+      padding: 8px 0 4px;
+    }
+
+    .greeting-text {
+      font-family: 'DM Sans', sans-serif;
+      font-size: var(--text-xl);
+      font-weight: 600;
+      color: var(--cream);
+      line-height: 1.3;
+      margin-bottom: 8px;
+    }
+
+    /* last-workout uses .label-caps */
+
+    /* ---- Next workout card ---- */
+    .workout-preview-card {
+      border-left: 3px solid var(--accent);
+      padding: 18px 20px 18px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .training-day {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px;
+      color: var(--cream);
+      letter-spacing: 0.03em;
+      line-height: 1.05;
+      margin: 6px 0 14px;
+    }
+
+    .exercise-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .exercise-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: var(--text-sm);
+      color: var(--text-muted);
+    }
+
+    .exercise-list li::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .exercise-name {
+      flex: 1;
+    }
+
+    .exercise-sets {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: var(--text-base);
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+    }
+
+    /* ---- Start Workout button ---- */
+    .btn-start-workout {
+      height: 56px;
+      font-size: var(--text-base);
+      letter-spacing: 0.16em;
+    }
+
+    @keyframes startPulse {
+      0%   { transform: scale(1); }
+      35%  { transform: scale(0.96); filter: brightness(1.2); }
+      70%  { transform: scale(1.02); }
+      100% { transform: scale(1); filter: brightness(1); }
+    }
+
+    .btn-start-workout.pulsing {
+      animation: startPulse 0.3s ease forwards;
+    }
+
+    /* ---- Tip card ---- */
+    .tip-card {
+      padding: 14px 16px 16px;
+      background: transparent;
+      border-color: var(--border);
+    }
+
+    .tip-label {
+      margin-bottom: 8px;
+    }
+
+    .tip-text {
+      font-size: var(--text-base);
+      color: var(--cream);
+      line-height: 1.65;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+
+    <!-- ── Header ───────────────────────────────────────── -->
+    <header class="home-header">
+      <span class="home-wordmark">KENNARI</span>
+      <a href="settings.html" class="icon-btn" aria-label="Settings">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06
+                   a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09
+                   A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83
+                   l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09
+                   A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83
+                   l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09
+                   a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83
+                   l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09
+                   a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </a>
+    </header>
+
+    <!-- ── Main content ──────────────────────────────────── -->
+    <main class="home-main">
+
+      <!-- Greeting -->
+      <div class="greeting-block page stagger-1">
+        <p id="greeting-text" class="greeting-text"></p>
+        <span id="last-workout" class="label-caps"></span>
+      </div>
+
+      <!-- Next workout card -->
+      <div class="card workout-preview-card page stagger-2">
+        <span class="label-caps">Your Next Workout</span>
+        <p id="training-day" class="training-day">—</p>
+        <ul id="exercise-list" class="exercise-list"></ul>
+        <span class="label-caps">~45 min</span>
+      </div>
+
+      <!-- Tip card -->
+      <div class="card tip-card page stagger-3">
+        <span class="label-caps tip-label">Tip</span>
+        <p id="tip-text" class="tip-text"></p>
+      </div>
+
+    </main>
+
+    <!-- ── Start Workout CTA ─────────────────────────────── -->
+    <div class="cta-area">
+      <button id="btn-start" class="btn-primary btn-start-workout page stagger-4"
+              type="button">
+        START WORKOUT
+      </button>
+    </div>
+
+    <!-- ── Bottom nav ────────────────────────────────────── -->
+    <nav class="bottom-nav">
+
+      <!-- Workout tab always lands on home first -->
+      <button class="nav-tab" type="button"
+              onclick="location.href='home.html'" aria-label="Workout">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <rect x="9"    y="11"  width="6"   height="2"/>
+          <rect x="1"    y="8"   width="7.5" height="8" rx="2.5"/>
+          <rect x="15.5" y="8"   width="7.5" height="8" rx="2.5"/>
+        </svg>
+        <span>Workout</span>
+      </button>
+
+      <button class="nav-tab" type="button"
+              onclick="location.href='tracking.html'" aria-label="Tracking">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.2" stroke-linecap="round">
+          <line x1="18" y1="20" x2="18" y2="10"/>
+          <line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6"  y1="20" x2="6"  y2="14"/>
+        </svg>
+        <span>Tracking</span>
+      </button>
+
+      <button class="nav-tab" type="button"
+              onclick="location.href='settings.html'" aria-label="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83
+                   M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+        </svg>
+        <span>Settings</span>
+      </button>
+
+    </nav>
+
+  </div><!-- .app-container -->
+
+  <script type="module" src="home.js"></script>
+</body>
+</html>
