@@ -9,6 +9,41 @@ import {
   getDisplayWeight,
 } from './program.js';
 
+// Mirrors WARMUP_SCHEMA percentages in program.js (index 0–3)
+const WARMUP_PERCENTAGES = [40, 50, 60, 80];
+
+const STORAGE_KEY = 'kennari_workout';
+
+function persistState() {
+  sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+    userId:        state.user?.id,
+    exerciseIndex: state.exerciseIndex,
+    phase:         state.phase,
+    setIndex:      state.setIndex,
+    displayMode:   state.displayMode,
+    sessionId:     state.sessionId,
+    sessionNumber: state.sessionNumber,
+    workout:       state.workout,
+  }));
+}
+
+function clearPersistedState() {
+  sessionStorage.removeItem(STORAGE_KEY);
+}
+
+function loadPersistedState(userId) {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const saved = JSON.parse(raw);
+    // Discard if it belongs to a different user
+    if (saved.userId !== userId) return null;
+    return saved;
+  } catch {
+    return null;
+  }
+}
+
 // ================================================================
 // State
 // ================================================================
@@ -39,13 +74,17 @@ const DOM = {
   sessionLabel:  document.getElementById('session-label'),
   weightNumber:  document.getElementById('weight-number'),
   weightUnit:    document.getElementById('weight-unit'),
+  repsLabel:     document.getElementById('reps-label'),
   setLabel:      document.getElementById('set-label'),
-  setDots:       document.getElementById('set-dots'),
+  exerciseCards: document.getElementById('exercise-cards'),
   btnComplete:   document.getElementById('btn-complete'),
-  btnDoneEarly:  document.getElementById('btn-done-early'),
   completion:    document.getElementById('completion-overlay'),
   completionSub: document.getElementById('completion-sub'),
   btnDone:       document.getElementById('btn-done'),
+  confirmOverlay:  document.getElementById('confirm-overlay'),
+  confirmCard:     document.getElementById('confirm-card'),
+  btnConfirmYes:   document.getElementById('btn-confirm-yes'),
+  btnConfirmNo:    document.getElementById('btn-confirm-no'),
   timerOverlay:  document.getElementById('timer-overlay'),
   timerCard:     document.getElementById('timer-card'),
   timerNumber:   document.getElementById('timer-number'),
@@ -112,6 +151,9 @@ function renderAll() {
   DOM.phasePill.className   = isWarmup ? 'pill-warmup' : 'pill-working';
   DOM.phasePill.textContent = isWarmup ? 'WARM UP' : 'WORKOUT';
 
+  // Header action button: skip warmup during warmup, done for today during working
+  DOM.skipWarmup.textContent = isWarmup ? 'Skip warm up' : "I'm done for today";
+
   // Exercise + session info
   DOM.exName.textContent       = exercise.name;
   DOM.sessionLabel.textContent = `TRAINING ${state.workout.day}`;
@@ -119,12 +161,21 @@ function renderAll() {
   // Weight number
   renderWeight(currentSet.weightLbs);
 
-  // Set label:  "SET 2 / 4 · 5 REPS"
-  DOM.setLabel.textContent =
-    `SET ${state.setIndex + 1} / ${sets.length} · ${currentSet.reps} REPS`;
+  // Reps line (large): "5 REPS"
+  DOM.repsLabel.textContent = `${currentSet.reps} REPS`;
 
-  // Dots: filled = completed, empty = upcoming or current
-  renderDots(sets.length, state.setIndex);
+  // Set info line (small): "SET 2 / 4 · 50%" (warmup) or "SET 2 / 3" (working)
+  const pctSuffix = isWarmup
+    ? ` · ${WARMUP_PERCENTAGES[state.setIndex] ?? ''}%`
+    : '';
+  DOM.setLabel.textContent =
+    `SET ${state.setIndex + 1} / ${sets.length}${pctSuffix}`;
+
+  // Exercise cards: one per exercise, active/completed/upcoming states
+  renderExerciseCards();
+
+  // Persist position so navigating away and back restores the workout
+  persistState();
 }
 
 function renderWeight(weightLbs) {
@@ -142,18 +193,61 @@ function renderWeight(weightLbs) {
   DOM.weightUnit.textContent   = displayUnit.toUpperCase();
 }
 
-function renderDots(total, completedCount) {
-  DOM.setDots.innerHTML = '';
-  for (let i = 0; i < total; i++) {
-    const dot = document.createElement('span');
-    dot.className = 'dot' + (i < completedCount ? ' filled' : '');
-    DOM.setDots.appendChild(dot);
-  }
+function renderExerciseCards() {
+  const exercises  = state.workout.exercises;
+  const currentIdx = state.exerciseIndex;
+  const isWarmup   = state.phase === 'warmup';
+
+  DOM.exerciseCards.innerHTML = '';
+
+  exercises.forEach((ex, i) => {
+    const card = document.createElement('div');
+
+    let status;
+    if (i < currentIdx)      status = 'completed';
+    else if (i === currentIdx) status = 'active';
+    else                       status = 'upcoming';
+
+    card.className = `ex-card ex-card--${status}`;
+
+    // Exercise name label
+    const nameEl = document.createElement('span');
+    nameEl.className   = 'ex-card-name';
+    nameEl.textContent = ex.name;
+
+    // Dots row
+    const dotsEl = document.createElement('div');
+    dotsEl.className = 'ex-card-dots';
+
+    let dotCount, filledCount;
+    if (status === 'completed') {
+      dotCount    = 3;   // completed: 3 salmon filled dots
+      filledCount = 3;
+    } else if (status === 'active') {
+      dotCount    = isWarmup ? 4 : 3;  // phase-specific count
+      filledCount = state.setIndex;    // sets already done this exercise
+    } else {
+      dotCount    = 4;   // upcoming: 4 muted empty dots
+      filledCount = 0;
+    }
+
+    for (let d = 0; d < dotCount; d++) {
+      const dot = document.createElement('span');
+      dot.className = 'ex-dot' + (d < filledCount ? ' filled' : '');
+      dotsEl.appendChild(dot);
+    }
+
+    card.appendChild(nameEl);
+    card.appendChild(dotsEl);
+    DOM.exerciseCards.appendChild(card);
+  });
 }
 
 // Immediately fill the dot for the set just tapped (before rest timer)
 function fillCurrentDot() {
-  const dots = DOM.setDots.querySelectorAll('.dot');
+  const activeCard = DOM.exerciseCards.querySelector('.ex-card--active');
+  if (!activeCard) return;
+  const dots = activeCard.querySelectorAll('.ex-dot');
   const dot  = dots[state.setIndex];
   if (dot) dot.classList.add('filled');
 }
@@ -315,6 +409,8 @@ async function saveSet(exercise, setType, setNumber, reps, weightLbs) {
 }
 
 async function finishWorkout(early = false) {
+  clearPersistedState();
+
   if (state.sessionId) {
     await supabase
       .from('sessions')
@@ -383,6 +479,23 @@ async function onCompleteSet() {
 }
 
 // ================================================================
+// Confirm stop (slide-up card)
+// ================================================================
+
+function showConfirmStop() {
+  DOM.confirmOverlay.classList.add('active');
+  void DOM.confirmCard.offsetHeight; // force reflow so transition fires
+  DOM.confirmCard.classList.remove('slide-down');
+  DOM.confirmCard.classList.add('slide-up');
+}
+
+function hideConfirmStop() {
+  DOM.confirmCard.classList.remove('slide-up');
+  DOM.confirmCard.classList.add('slide-down');
+  DOM.confirmOverlay.classList.remove('active');
+}
+
+// ================================================================
 // Done for today (early exit)
 // ================================================================
 
@@ -400,13 +513,14 @@ async function onDoneForToday() {
 
   // Nothing was completed at all — bail without creating a session record
   if (!state.sessionId) {
+    clearPersistedState();
     window.location.replace('home.html');
     return;
   }
 
-  // Disable both buttons while saving
-  DOM.btnDoneEarly.disabled  = true;
-  DOM.btnComplete.disabled   = true;
+  // Disable buttons while saving
+  DOM.skipWarmup.disabled  = true;
+  DOM.btnComplete.disabled = true;
 
   await finishWorkout(true);
 }
@@ -472,25 +586,45 @@ async function init() {
 
   state.profile = profile;
 
-  // Next session number = completed sessions + 1
-  const { count } = await supabase
-    .from('sessions')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', state.user.id)
-    .not('completed_at', 'is', null);
+  // Restore mid-workout state if the user navigated away and came back
+  const saved = loadPersistedState(state.user.id);
 
-  state.sessionNumber = (count ?? 0) + 1;
+  if (saved?.workout) {
+    state.exerciseIndex = saved.exerciseIndex;
+    state.phase         = saved.phase;
+    state.setIndex      = saved.setIndex;
+    state.displayMode   = saved.displayMode;
+    state.sessionId     = saved.sessionId;
+    state.sessionNumber = saved.sessionNumber;
+    state.workout       = saved.workout;
+  } else {
+    // Fresh start — fetch session number and build workout
+    const { count } = await supabase
+      .from('sessions')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', state.user.id)
+      .not('completed_at', 'is', null);
 
-  // Build the full workout
-  state.workout = await getFullWorkout(state.user.id, profile);
+    state.sessionNumber = (count ?? 0) + 1;
+    state.workout       = await getFullWorkout(state.user.id, profile);
+  }
 
   // Initial render
   renderAll();
 
   // Listeners
   DOM.btnComplete.addEventListener('click', onCompleteSet);
-  DOM.btnDoneEarly.addEventListener('click', onDoneForToday);
-  DOM.skipWarmup.addEventListener('click', onSkipWarmup);
+  DOM.skipWarmup.addEventListener('click', () => {
+    if (state.phase === 'warmup') onSkipWarmup();
+    else showConfirmStop();
+  });
+
+  DOM.btnConfirmYes.addEventListener('click', () => {
+    hideConfirmStop();
+    onDoneForToday();
+  });
+  DOM.btnConfirmNo.addEventListener('click', hideConfirmStop);
+  DOM.confirmOverlay.addEventListener('click', hideConfirmStop);
   DOM.btnDone.addEventListener('click', () => {
     window.location.replace('home.html');
   });

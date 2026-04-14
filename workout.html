@@ -19,9 +19,6 @@
     .workout-screen.phase-warmup  .mode-btn.active { color: var(--accent-warmup); }
     .workout-screen.phase-working .mode-btn.active { color: var(--accent); }
 
-    /* Hide "Skip warm up" once in working phase */
-    .workout-screen.phase-working .skip-link { visibility: hidden; pointer-events: none; }
-
     /* ---- Header ---- */
     .workout-header {
       display: flex;
@@ -66,12 +63,11 @@
       flex: 1;
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      padding: 16px 24px;
+      justify-content: space-evenly;
+      padding: 8px 24px;
       /* padding-bottom = nav (64px) + CTA area (~120px) = ~184px
          this shifts the flex center into the actual visible space */
       padding-bottom: 184px;
-      gap: 20px;
     }
 
     /* ---- Exercise info ---- */
@@ -82,7 +78,7 @@
 
     .exercise-name {
       font-family: 'DM Sans', sans-serif;
-      font-size: var(--text-xl);
+      font-size: var(--text-2xl);
       font-weight: 600;
       color: var(--cream);
       line-height: 1.2;
@@ -160,11 +156,20 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 14px;
+      gap: 6px;
     }
 
     .set-label-text {
       /* inherits .label-caps from class below */
+    }
+
+    .reps-label {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--cream);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
     /* ---- CTA pinned above bottom nav ---- */
@@ -280,6 +285,121 @@
       line-height: 1.5;
       margin-bottom: 8px;
     }
+
+    /* ---- Exercise Cards (Set Tracker) ---- */
+    .exercise-cards {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .ex-card {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 6px;
+      background: var(--surface);
+      border: 1.5px solid transparent;
+      border-radius: var(--radius-sm);
+    }
+
+    .ex-card-name {
+      font-size: var(--text-xs);
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .ex-card--active .ex-card-name {
+      color: var(--cream);
+    }
+
+    .ex-card-dots {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .ex-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      border: 1.5px solid var(--text-muted);
+      background: transparent;
+      transition: background 0.25s ease, border-color 0.25s ease, transform 0.2s ease;
+    }
+
+    /* Active card border — switches with phase */
+    .workout-screen.phase-warmup  .ex-card--active { border-color: var(--accent-warmup); }
+    .workout-screen.phase-working .ex-card--active { border-color: var(--accent); }
+
+    /* Active exercise dots — empty outline color by phase */
+    .workout-screen.phase-warmup  .ex-card--active .ex-dot { border-color: var(--accent-warmup); }
+    .workout-screen.phase-working .ex-card--active .ex-dot { border-color: var(--accent); }
+
+    /* Active exercise dots — filled color by phase */
+    .workout-screen.phase-warmup  .ex-card--active .ex-dot.filled {
+      background: var(--accent-warmup);
+      border-color: var(--accent-warmup);
+      transform: scale(1.1);
+    }
+    .workout-screen.phase-working .ex-card--active .ex-dot.filled {
+      background: var(--accent);
+      border-color: var(--accent);
+      transform: scale(1.1);
+    }
+
+    /* Completed exercise — all 3 salmon dots filled */
+    .ex-card--completed .ex-dot {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    /* ---- Confirm stop card ---- */
+    .confirm-card {
+      height: auto;
+      padding: 32px 28px 40px;
+      gap: 0;
+    }
+
+    .confirm-heading {
+      font-size: var(--text-lg);
+      font-weight: 600;
+      color: var(--cream);
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .confirm-sub {
+      font-size: var(--text-sm);
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .confirm-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .confirm-no-btn {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 10px 0;
+      transition: color 0.15s ease;
+    }
+
+    .confirm-no-btn:hover { color: var(--cream); }
   </style>
 </head>
 <body>
@@ -292,22 +412,6 @@
         <button id="btn-skip-warmup" class="btn-ghost skip-link" type="button">
           Skip warm up
         </button>
-        <a href="settings.html" class="icon-btn" aria-label="Settings">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="2"
-               stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06
-                     a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09
-                     A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83
-                     l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09
-                     A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83
-                     l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09
-                     a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83
-                     l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09
-                     a1.65 1.65 0 0 0-1.51 1z"/>
-          </svg>
-        </a>
       </div>
     </header>
 
@@ -365,12 +469,15 @@
         </div>
       </div>
 
-      <!-- Set tracker -->
+      <!-- Set info -->
       <div class="set-tracker">
-        <p id="set-label" class="label-caps set-label-text">SET 1 / 4 · 5 REPS</p>
-        <div id="set-dots" class="set-dots">
-          <!-- injected by workout.js -->
-        </div>
+        <p id="reps-label" class="reps-label">5 REPS</p>
+        <p id="set-label" class="label-caps set-label-text">SET 1 / 4 · 40%</p>
+      </div>
+
+      <!-- Exercise cards -->
+      <div id="exercise-cards" class="exercise-cards">
+        <!-- injected by workout.js -->
       </div>
 
     </main>
@@ -379,9 +486,6 @@
     <div class="cta-area">
       <button id="btn-complete" class="btn-complete" type="button">
         COMPLETE SET
-      </button>
-      <button id="btn-done-early" class="btn-done-early" type="button">
-        I'm done for today
       </button>
     </div>
 
@@ -431,6 +535,22 @@
         <button id="btn-done" class="btn-primary" type="button"
                 style="margin-top: 8px;">
           Done
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Confirm stop overlay + card ─────────────────── -->
+    <div id="confirm-overlay" class="timer-overlay"></div>
+    <div id="confirm-card" class="timer-card confirm-card">
+      <div class="timer-handle"></div>
+      <p class="confirm-heading">Done for today?</p>
+      <p class="confirm-sub">Your progress so far will be saved.</p>
+      <div class="confirm-actions">
+        <button id="btn-confirm-yes" class="btn-primary" type="button">
+          Yes, stop workout
+        </button>
+        <button id="btn-confirm-no" class="btn-ghost confirm-no-btn" type="button">
+          No, keep going
         </button>
       </div>
     </div>
