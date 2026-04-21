@@ -1,5 +1,9 @@
 /* Kennari — settings.js | Session 9
    User preferences: profile, equipment, units, rest timers, logout.
+   ------------------------------------------------------------------
+   SUPABASE SQL (run once in SQL Editor):
+   ALTER TABLE profiles
+   ADD COLUMN IF NOT EXISTS weight_increment_lbs numeric default 5;
    ------------------------------------------------------------------ */
 
 import { supabase, signOut } from './supabase.js';
@@ -10,9 +14,10 @@ import { requireAuth }       from './app.js';
 // ================================================================
 
 const state = {
-  user:    null,
-  profile: null,
-  unit:    'lbs',   // 'lbs' | 'kg'
+  user:            null,
+  profile:         null,
+  unit:            'lbs',   // 'lbs' | 'kg'
+  weightIncrement: 5,       // lbs — loaded from profile
 };
 
 // ================================================================
@@ -38,6 +43,9 @@ const DOM = {
   inputWorking:    document.getElementById('input-rest-working'),
   btnSaveTimers:   document.getElementById('btn-save-timers'),
   feedbackTimers:  document.getElementById('feedback-timers'),
+  // Progression
+  incrementBtns:    document.querySelectorAll('.increment-toggle .toggle-opt'),
+  incrementKgLabel: document.getElementById('increment-kg-label'),
   // Account
   displayEmail:    document.getElementById('display-email'),
   btnLogout:       document.getElementById('btn-logout'),
@@ -87,6 +95,11 @@ function showFeedback(el) {
 // Pre-fill from profile
 // ================================================================
 
+function updateIncrementKgLabel(incLbs) {
+  const kg = Math.round(incLbs * 0.453592 * 10) / 10;
+  DOM.incrementKgLabel.textContent = `≈ ${kg} kg per session`;
+}
+
 function fillForm() {
   const p    = state.profile;
   const unit = state.unit;
@@ -105,6 +118,14 @@ function fillForm() {
   // Rest timers — always in seconds, no unit conversion
   DOM.inputWarmup.value  = p.rest_warmup_seconds  ?? 90;
   DOM.inputWorking.value = p.rest_working_seconds ?? 180;
+
+  // Weight increment
+  const inc = parseFloat(p.weight_increment_lbs ?? 5);
+  state.weightIncrement = inc;
+  DOM.incrementBtns.forEach(btn =>
+    btn.classList.toggle('active', parseFloat(btn.dataset.increment) === inc),
+  );
+  updateIncrementKgLabel(inc);
 
   // Unit toggle UI
   applyUnitLabels(unit);
@@ -211,6 +232,27 @@ async function saveUnit(newUnit) {
 }
 
 // ================================================================
+// Save — Weight Increment
+// ================================================================
+
+async function saveIncrement(newInc) {
+  if (newInc === state.weightIncrement) return;
+  state.weightIncrement = newInc;
+
+  DOM.incrementBtns.forEach(btn =>
+    btn.classList.toggle('active', parseFloat(btn.dataset.increment) === newInc),
+  );
+  updateIncrementKgLabel(newInc);
+
+  await supabase
+    .from('profiles')
+    .update({ weight_increment_lbs: newInc })
+    .eq('id', state.user.id);
+
+  state.profile.weight_increment_lbs = newInc;
+}
+
+// ================================================================
 // Save — Rest Timers
 // ================================================================
 
@@ -263,6 +305,10 @@ function setupListeners() {
 
   DOM.toggleBtns.forEach(btn => {
     btn.addEventListener('click', () => saveUnit(btn.dataset.unit));
+  });
+
+  DOM.incrementBtns.forEach(btn => {
+    btn.addEventListener('click', () => saveIncrement(parseFloat(btn.dataset.increment)));
   });
 
   // Mark sections dirty when any field changes

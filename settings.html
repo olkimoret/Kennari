@@ -139,6 +139,21 @@
       letter-spacing: 0.04em;
     }
 
+    /* ---- Increment toggle ---- */
+    .increment-toggle {
+      display: flex;
+      background: var(--surface-raised);
+      border-radius: var(--radius-pill);
+      padding: 4px;
+      gap: 4px;
+    }
+
+    .increment-toggle .toggle-opt {
+      flex: 1;
+      text-align: center;
+      padding: 8px 0;
+    }
+
     /* ---- Account section ---- */
     .email-display {
       font-size: var(--text-sm);
@@ -351,6 +366,25 @@
               <span class="btn-label">Save</span>
               <span class="spinner" aria-hidden="true"></span>
             </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ─── PROGRESSION ────────────────────────────── -->
+      <div class="settings-section">
+        <span class="label-caps section-label">Progression</span>
+        <div class="card settings-card">
+
+          <div class="field-group">
+            <label class="label-caps">Weight added each session</label>
+            <p class="helper-text" style="margin-top: 3px;">Applied to all exercises after a successful session</p>
+            <div class="increment-toggle" role="group" aria-label="Weight increment" style="margin-top: 8px;">
+              <button class="toggle-opt" data-increment="2.5" type="button">2.5 lbs</button>
+              <button class="toggle-opt active" data-increment="5" type="button">5 lbs</button>
+              <button class="toggle-opt" data-increment="10" type="button">10 lbs</button>
+            </div>
+            <p id="increment-kg-label" class="helper-text" style="margin-top: 6px;">≈ 2.3 kg per session</p>
           </div>
 
         </div>

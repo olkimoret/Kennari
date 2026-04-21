@@ -7,6 +7,10 @@ import { requireAuth }       from './app.js';
 import {
   getFullWorkout,
   getDisplayWeight,
+  getWarmupSets,
+  getWorkingSets,
+  roundToNearest,
+  convertToKg,
 } from './program.js';
 
 // Mirrors WARMUP_SCHEMA percentages in program.js (index 0–3)
@@ -49,17 +53,20 @@ function loadPersistedState(userId) {
 // ================================================================
 
 const state = {
-  user:           null,
-  profile:        null,
-  workout:        null,   // { day, exercises: [...] }
-  sessionId:      null,   // created on first set completion
-  sessionNumber:  null,
-  exerciseIndex:  0,      // which exercise in workout.exercises
-  phase:          'warmup',  // 'warmup' | 'working'
-  setIndex:       0,      // which set within current phase (0-based)
-  displayMode:    'total',
-  restInterval:   null,   // active countdown interval
-  restOnComplete: null,   // callback stored so tap-to-skip can call it
+  user:              null,
+  profile:           null,
+  workout:           null,   // { day, exercises: [...] }
+  sessionId:         null,   // created on first set completion
+  sessionNumber:     null,
+  exerciseIndex:     0,      // which exercise in workout.exercises
+  phase:             'warmup',  // 'warmup' | 'working'
+  setIndex:          0,      // which set within current phase (0-based)
+  displayMode:       'total',
+  restInterval:      null,   // active countdown interval
+  restOnComplete:    null,   // callback stored so tap-to-skip can call it
+  weightIncrement:   5,      // lbs — loaded from profile
+  adjustOriginalLbs: null,   // working weight when popup opened
+  adjustCurrentLbs:  null,   // in-progress adjustment value
 };
 
 // ================================================================
@@ -90,6 +97,16 @@ const DOM = {
   timerNumber:   document.getElementById('timer-number'),
   timerRing:     document.getElementById('timer-ring'),
   btnSkipRest:   document.getElementById('btn-skip-rest'),
+  // Weight adjust popup
+  btnAdjustWeight:  document.getElementById('btn-adjust-weight'),
+  adjustOverlay:    document.getElementById('adjust-overlay'),
+  adjustCard:       document.getElementById('adjust-card'),
+  adjustWeightNum:  document.getElementById('adjust-weight-number'),
+  adjustWeightUnit: document.getElementById('adjust-weight-unit'),
+  btnAdjustMinus:   document.getElementById('btn-adjust-minus'),
+  btnAdjustPlus:    document.getElementById('btn-adjust-plus'),
+  adjustInput:      document.getElementById('adjust-input'),
+  btnAdjustSave:    document.getElementById('btn-adjust-save'),
 };
 
 // ================================================================
@@ -570,6 +587,138 @@ function setupModeIcons() {
 }
 
 // ================================================================
+// Weight adjustment popup
+// ================================================================
+
+function getIncrementDisplayLabel() {
+  const unit = state.profile?.unit_preference ?? 'lbs';
+  const inc  = state.weightIncrement;
+  return unit === 'kg' ? (inc / 2) : inc;
+}
+
+function renderAdjustDisplay() {
+  const unit    = state.profile?.unit_preference ?? 'lbs';
+  const rounded = roundToNearest(state.adjustCurrentLbs, 2.5);
+  const display = unit === 'kg' ? convertToKg(rounded) : rounded;
+
+  DOM.adjustWeightNum.textContent  = display;
+  DOM.adjustWeightUnit.textContent = unit.toUpperCase();
+
+  const changed = Math.abs(state.adjustCurrentLbs - state.adjustOriginalLbs) >= 0.01;
+  DOM.btnAdjustSave.classList.toggle('visible', changed);
+}
+
+function openAdjustPopup() {
+  if (state.phase !== 'working') return;
+
+  const exercise = getCurrentExercise();
+  state.adjustOriginalLbs = exercise.workingWeightLbs;
+  state.adjustCurrentLbs  = exercise.workingWeightLbs;
+
+  const incLabel = getIncrementDisplayLabel();
+  DOM.btnAdjustMinus.textContent = `− ${incLabel}`;
+  DOM.btnAdjustPlus.textContent  = `+ ${incLabel}`;
+  DOM.adjustInput.value = '';
+  DOM.btnAdjustSave.classList.remove('visible');
+
+  renderAdjustDisplay();
+
+  DOM.adjustOverlay.classList.add('active');
+  void DOM.adjustCard.offsetHeight;
+  DOM.adjustCard.classList.remove('slide-down');
+  DOM.adjustCard.classList.add('slide-up');
+}
+
+function closeAdjustPopup() {
+  DOM.adjustCard.classList.remove('slide-up');
+  DOM.adjustCard.classList.add('slide-down');
+  DOM.adjustOverlay.classList.remove('active');
+}
+
+async function saveAdjustWeight() {
+  const newLbs   = roundToNearest(state.adjustCurrentLbs, 2.5);
+  const exercise = getCurrentExercise();
+  const exKey    = exercise.exercise;
+
+  // Update exercise in state
+  exercise.workingWeightLbs = newLbs;
+  exercise.warmupSets       = getWarmupSets(newLbs);
+  exercise.workingSets      = getWorkingSets(newLbs, exKey);
+
+  closeAdjustPopup();
+  renderAll();
+
+  // Persist new starting weight so next session progression is based on this
+  supabase.from('starting_weights').insert({
+    user_id:    state.user.id,
+    exercise:   exKey,
+    weight_lbs: newLbs,
+    set_at:     new Date().toISOString(),
+  });
+
+  // Update already-logged working sets in DB for this exercise/session
+  if (state.sessionId) {
+    supabase.from('sets')
+      .update({ weight_lbs: newLbs })
+      .eq('session_id', state.sessionId)
+      .eq('exercise', exKey)
+      .eq('set_type', 'working');
+  }
+
+  persistState();
+}
+
+function setupAdjustPopup() {
+  DOM.btnAdjustWeight.addEventListener('click', () => {
+    if (state.phase === 'working') openAdjustPopup();
+  });
+
+  DOM.adjustOverlay.addEventListener('click', closeAdjustPopup);
+
+  DOM.btnAdjustMinus.addEventListener('click', () => {
+    const newLbs = Math.max(
+      roundToNearest(state.adjustCurrentLbs - state.weightIncrement, 2.5),
+      45,
+    );
+    state.adjustCurrentLbs = newLbs;
+    DOM.adjustInput.value  = '';
+    renderAdjustDisplay();
+  });
+
+  DOM.btnAdjustPlus.addEventListener('click', () => {
+    state.adjustCurrentLbs = roundToNearest(
+      state.adjustCurrentLbs + state.weightIncrement,
+      2.5,
+    );
+    DOM.adjustInput.value = '';
+    renderAdjustDisplay();
+  });
+
+  DOM.adjustInput.addEventListener('input', () => {
+    const raw = parseFloat(DOM.adjustInput.value);
+    if (isNaN(raw) || raw <= 0) return;
+    const unit = state.profile?.unit_preference ?? 'lbs';
+    const lbs  = unit === 'kg' ? raw / 0.453592 : raw;
+    state.adjustCurrentLbs = Math.max(lbs, 45);
+    renderAdjustDisplay();
+  });
+
+  DOM.adjustInput.addEventListener('blur', () => {
+    if (!DOM.adjustInput.value) return;
+    const raw = parseFloat(DOM.adjustInput.value);
+    if (isNaN(raw) || raw <= 0) { DOM.adjustInput.value = ''; return; }
+    const unit    = state.profile?.unit_preference ?? 'lbs';
+    const lbs     = unit === 'kg' ? raw / 0.453592 : raw;
+    const rounded = Math.max(roundToNearest(lbs, 2.5), 45);
+    state.adjustCurrentLbs = rounded;
+    DOM.adjustInput.value  = unit === 'kg' ? convertToKg(rounded) : rounded;
+    renderAdjustDisplay();
+  });
+
+  DOM.btnAdjustSave.addEventListener('click', saveAdjustWeight);
+}
+
+// ================================================================
 // Init
 // ================================================================
 
@@ -584,7 +733,8 @@ async function init() {
     .eq('id', state.user.id)
     .maybeSingle();
 
-  state.profile = profile;
+  state.profile          = profile;
+  state.weightIncrement  = parseFloat(profile?.weight_increment_lbs ?? 5);
 
   // Restore mid-workout state if the user navigated away and came back
   const saved = loadPersistedState(state.user.id);
@@ -632,6 +782,7 @@ async function init() {
   DOM.btnSkipRest.addEventListener('click', skipRest);
 
   setupModeIcons();
+  setupAdjustPopup();
 }
 
 init();

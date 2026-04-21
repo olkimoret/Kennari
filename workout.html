@@ -172,6 +172,95 @@
       text-transform: uppercase;
     }
 
+    /* ---- Weight unit group (unit + pencil icon) ---- */
+    .weight-unit-group {
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      padding-bottom: 10px; /* mirrors original .weight-unit baseline offset */
+    }
+
+    .weight-unit-group .weight-unit {
+      padding-bottom: 0;
+    }
+
+    .weight-edit-btn {
+      display: none; /* only shown during working phase */
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 2px;
+      transition: color 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+      margin-bottom: 2px;
+    }
+
+    .weight-edit-btn:hover { color: var(--cream); }
+
+    .workout-screen.phase-working .weight-edit-btn {
+      display: flex;
+    }
+
+    /* ---- Weight adjust card ---- */
+    .adjust-card {
+      height: auto;
+      min-height: 50vh;
+      padding: 40px 28px 40px;
+      gap: 14px;
+      justify-content: flex-start;
+    }
+
+    .adjust-weight-display {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      margin-bottom: 2px;
+    }
+
+    .adjust-weight-number {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 56px;
+      line-height: 1;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+
+    .adjust-weight-unit {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      padding-bottom: 8px;
+    }
+
+    .adjust-btn-row {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .btn-adjust {
+      flex: 1;
+      font-size: var(--text-lg);
+      font-weight: 600;
+    }
+
+    .adjust-save-btn {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .adjust-save-btn.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
     /* ---- CTA pinned above bottom nav ---- */
     .cta-area {
       position: fixed;
@@ -429,7 +518,16 @@
 
         <div class="weight-display">
           <span id="weight-number" class="weight-number">—</span>
-          <span id="weight-unit"   class="weight-unit">LBS</span>
+          <div class="weight-unit-group">
+            <span id="weight-unit" class="weight-unit">LBS</span>
+            <button id="btn-adjust-weight" class="weight-edit-btn" type="button" aria-label="Adjust weight">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </button>
+          </div>
         </div>
 
         <!-- Display mode icons -->
@@ -568,6 +666,24 @@
         <span id="timer-number" class="timer-number">0:00</span>
       </div>
       <button id="btn-skip-rest" class="btn-ghost timer-skip-btn" type="button">Skip Rest</button>
+    </div>
+
+    <!-- ── Weight adjust overlay + card ────────────────── -->
+    <div id="adjust-overlay" class="timer-overlay"></div>
+    <div id="adjust-card" class="timer-card adjust-card">
+      <div class="timer-handle"></div>
+      <p class="label-caps">Adjust Weight</p>
+      <div class="adjust-weight-display">
+        <span id="adjust-weight-number" class="adjust-weight-number">—</span>
+        <span id="adjust-weight-unit" class="adjust-weight-unit">LBS</span>
+      </div>
+      <div class="adjust-btn-row">
+        <button id="btn-adjust-minus" class="btn-secondary btn-adjust" type="button">− 5</button>
+        <button id="btn-adjust-plus"  class="btn-secondary btn-adjust" type="button">+ 5</button>
+      </div>
+      <input id="adjust-input" type="number" class="input-field"
+             placeholder="or enter weight" inputmode="decimal" />
+      <button id="btn-adjust-save" class="btn-primary adjust-save-btn" type="button">Save</button>
     </div>
 
   </div><!-- #workout-screen -->

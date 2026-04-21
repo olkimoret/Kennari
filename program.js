@@ -60,7 +60,7 @@ const WARMUP_SCHEMA = [
 ];
 
 const MIN_WEIGHT_LBS   = 45;   // Never load a warmup below the bare bar
-const PROGRESSION_LBS  = 5;    // Added each successful session
+const PROGRESSION_LBS  = 5;    // Default; overridden by user's weight_increment_lbs
 const DELOAD_FACTOR    = 0.90; // Applied after two consecutive fails
 const WORKING_REPS     = 5;
 
@@ -275,7 +275,7 @@ export async function getNextWorkoutDay(userId) {
 // Applies progression, same-weight repeat, or deload logic
 // ================================================================
 
-export async function getWorkingWeight(userId, exercise) {
+export async function getWorkingWeight(userId, exercise, progressionLbs = PROGRESSION_LBS) {
   const history = await getExerciseHistory(userId, exercise);
 
   // No history at all — use onboarding starting weight
@@ -288,8 +288,7 @@ export async function getWorkingWeight(userId, exercise) {
   const lastFailed   = didFail(last.sets);
 
   if (!lastFailed) {
-    // Clean session → progress by 5 lbs
-    return lastWeight + PROGRESSION_LBS;
+    return lastWeight + progressionLbs;
   }
 
   // Failed last time — check for double fail at same weight
@@ -313,12 +312,13 @@ export async function getWorkingWeight(userId, exercise) {
 // ================================================================
 
 export async function getFullWorkout(userId, userProfile) {
-  const day       = await getNextWorkoutDay(userId);
-  const exercises = DAY_EXERCISES[day];
+  const day           = await getNextWorkoutDay(userId);
+  const exercises     = DAY_EXERCISES[day];
+  const progressionLbs = userProfile?.weight_increment_lbs ?? PROGRESSION_LBS;
 
   const exerciseData = await Promise.all(
     exercises.map(async (ex) => {
-      const workingWeightLbs = await getWorkingWeight(userId, ex);
+      const workingWeightLbs = await getWorkingWeight(userId, ex, progressionLbs);
       return {
         name:             EXERCISE_LABELS[ex],
         exercise:         ex,
