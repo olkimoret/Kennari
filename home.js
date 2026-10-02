@@ -180,6 +180,7 @@ async function init() {
       .from('sessions')
       .select('completed_at, session_number')
       .eq('user_id', state.user.id)
+      .eq('program', 'lite_viking')
       .not('completed_at', 'is', null)
       .order('session_number', { ascending: false })
       .limit(1)

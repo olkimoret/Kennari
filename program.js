@@ -225,6 +225,7 @@ async function getExerciseHistory(userId, exercise) {
     .from('sessions')
     .select('id, session_number')
     .eq('user_id', userId)
+    .eq('program', 'lite_viking')
     .not('completed_at', 'is', null)
     .order('session_number', { ascending: false })
     .limit(20);
@@ -261,6 +262,7 @@ export async function getNextWorkoutDay(userId) {
     .from('sessions')
     .select('workout_day')
     .eq('user_id', userId)
+    .eq('program', 'lite_viking')
     .not('completed_at', 'is', null)
     .order('session_number', { ascending: false })
     .limit(1)

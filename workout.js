@@ -399,6 +399,7 @@ async function ensureSession() {
       user_id:        state.user.id,
       session_number: state.sessionNumber,
       workout_day:    state.workout.day,
+      program:        'lite_viking',
       completed_at:   null,
     })
     .select('id')
@@ -410,6 +411,9 @@ async function ensureSession() {
 }
 
 async function saveSet(exercise, setType, setNumber, reps, weightLbs) {
+  // Warmups are derived from the working weight and not needed for progress
+  if (setType === 'warmup') return;
+
   await ensureSession();
   if (!state.sessionId) return;
 
@@ -753,6 +757,7 @@ async function init() {
       .from('sessions')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', state.user.id)
+      .eq('program', 'lite_viking')
       .not('completed_at', 'is', null);
 
     state.sessionNumber = (count ?? 0) + 1;

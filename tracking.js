@@ -101,6 +101,7 @@ async function loadInitialData() {
       .from('sessions')
       .select('id, session_number, completed_at')
       .eq('user_id', state.user.id)
+      .eq('program', 'lite_viking')
       .not('completed_at', 'is', null)
       .order('session_number', { ascending: true }),
     supabase

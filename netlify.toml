@@ -1,0 +1,20 @@
+# Keep project docs, SQL and tooling in the repo but out of the public site.
+# (.gitignore only controls git; Netlify serves whatever is in the repo.)
+
+[[redirects]]
+  from = "/docs/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/migrations/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/.claude/*"
+  to = "/404.html"
+  status = 404
+  force = true

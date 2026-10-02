@@ -17,7 +17,8 @@ const state = {
   user:            null,
   profile:         null,
   unit:            'lbs',   // 'lbs' | 'kg'
-  weightIncrement: 5,       // lbs — loaded from profile
+  weightIncrement: 5,       // lbs — saved value, loaded from profile
+  pendingIncrement: 5,      // lbs — selected but not yet saved
 };
 
 // ================================================================
@@ -36,7 +37,7 @@ const DOM = {
   btnSaveEquip:    document.getElementById('btn-save-equipment'),
   feedbackEquip:   document.getElementById('feedback-equipment'),
   // Units
-  toggleBtns:      document.querySelectorAll('.toggle-opt'),
+  toggleBtns:      document.querySelectorAll('.unit-toggle .toggle-opt'),
   unitLabels:      document.querySelectorAll('.unit-label'),
   // Timers
   inputWarmup:     document.getElementById('input-rest-warmup'),
@@ -46,6 +47,8 @@ const DOM = {
   // Progression
   incrementBtns:    document.querySelectorAll('.increment-toggle .toggle-opt'),
   incrementKgLabel: document.getElementById('increment-kg-label'),
+  btnSaveIncrement: document.getElementById('btn-save-increment'),
+  feedbackIncrement: document.getElementById('feedback-increment'),
   // Account
   displayEmail:    document.getElementById('display-email'),
   btnLogout:       document.getElementById('btn-logout'),
@@ -121,7 +124,8 @@ function fillForm() {
 
   // Weight increment
   const inc = parseFloat(p.weight_increment_lbs ?? 5);
-  state.weightIncrement = inc;
+  state.weightIncrement  = inc;
+  state.pendingIncrement = inc;
   DOM.incrementBtns.forEach(btn =>
     btn.classList.toggle('active', parseFloat(btn.dataset.increment) === inc),
   );
@@ -235,21 +239,38 @@ async function saveUnit(newUnit) {
 // Save — Weight Increment
 // ================================================================
 
-async function saveIncrement(newInc) {
-  if (newInc === state.weightIncrement) return;
-  state.weightIncrement = newInc;
+// Selecting a step only marks it pending; Save writes it
+function selectIncrement(newInc) {
+  state.pendingIncrement = newInc;
 
   DOM.incrementBtns.forEach(btn =>
     btn.classList.toggle('active', parseFloat(btn.dataset.increment) === newInc),
   );
   updateIncrementKgLabel(newInc);
 
-  await supabase
+  if (newInc === state.weightIncrement) markClean(DOM.btnSaveIncrement);
+  else markDirty(DOM.btnSaveIncrement);
+}
+
+async function saveIncrement() {
+  if (!DOM.btnSaveIncrement.classList.contains('dirty')) return;
+
+  const newInc = state.pendingIncrement;
+  setLoading(DOM.btnSaveIncrement, true);
+
+  const { error } = await supabase
     .from('profiles')
     .update({ weight_increment_lbs: newInc })
     .eq('id', state.user.id);
 
-  state.profile.weight_increment_lbs = newInc;
+  setLoading(DOM.btnSaveIncrement, false);
+
+  if (!error) {
+    state.weightIncrement              = newInc;
+    state.profile.weight_increment_lbs = newInc;
+    markClean(DOM.btnSaveIncrement);
+    showFeedback(DOM.feedbackIncrement);
+  }
 }
 
 // ================================================================
@@ -308,8 +329,9 @@ function setupListeners() {
   });
 
   DOM.incrementBtns.forEach(btn => {
-    btn.addEventListener('click', () => saveIncrement(parseFloat(btn.dataset.increment)));
+    btn.addEventListener('click', () => selectIncrement(parseFloat(btn.dataset.increment)));
   });
+  DOM.btnSaveIncrement.addEventListener('click', saveIncrement);
 
   // Mark sections dirty when any field changes
   [DOM.inputName, DOM.inputAge, DOM.inputBodyweight].forEach(el =>
