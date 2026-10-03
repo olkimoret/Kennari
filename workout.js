@@ -653,7 +653,7 @@ async function saveAdjustWeight() {
   renderAll();
 
   // Persist new starting weight so next session progression is based on this
-  supabase.from('starting_weights').insert({
+  await supabase.from('starting_weights').insert({
     user_id:    state.user.id,
     exercise:   exKey,
     weight_lbs: newLbs,
@@ -662,7 +662,7 @@ async function saveAdjustWeight() {
 
   // Update already-logged working sets in DB for this exercise/session
   if (state.sessionId) {
-    supabase.from('sets')
+    await supabase.from('sets')
       .update({ weight_lbs: newLbs })
       .eq('session_id', state.sessionId)
       .eq('exercise', exKey)

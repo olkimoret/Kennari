@@ -101,6 +101,7 @@ Kennari-App/
 ├── style.css             ← global design system
 ├── app.js                ← shared: auth guard (requireAuth), login redirect, auth listener
 ├── program.js            ← Lite Viking engine (all weight logic)
+├── program531.js         ← 5/3/1 engine (logic only, not wired to any screen yet)
 ├── supabase.js           ← supabase client init + auth helpers
 ├── Assets/               ← images (Norse_pattern.png)
 ├── migrations/           ← manual SQL migrations (run in Supabase SQL Editor)
@@ -114,7 +115,7 @@ Kennari-App/
     └── PRD-531.md        ← 5/3/1 spec
 ```
 
-Planned for 5/3/1: `program531.js` (see `PRD-531.md`). `program.js` stays the Lite Viking engine.
+`program.js` stays the Lite Viking engine; `program531.js` holds the 5/3/1 logic (see `PRD-531.md`).
 
 ---
 
@@ -351,7 +352,7 @@ Saves `profiles` (session_count 0), `starting_weights` (4 rows), `goals` (4 rows
 - −/+ buttons step by the user's progression increment (`weight_increment_lbs`; shown in kg as half)
 - Or type an exact weight; rounds to 2.5 lbs, minimum 45 lbs
 - Save button appears only when the value changed
-- Save re-calculates warmup and working sets for the current exercise on screen. The code also intends to insert a new `starting_weights` row and update already-logged working sets of this session, but those two Supabase calls are not awaited, so they most likely never run (known bug, not fixed in this change)
+- Save re-calculates warmup and working sets for the current exercise on screen. It also inserts a new `starting_weights` row (so next session's progression starts from it) and updates already-logged working sets of this session for that exercise
 
 **Done-for-today confirmation:** bottom card "Done for today? Your progress so far will be saved." with confirm / cancel. Confirming stamps the session `completed_at` and increments `session_count`. If no set was completed yet, no session is created and the user returns to Home.
 
