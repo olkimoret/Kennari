@@ -20,6 +20,8 @@ const state = {
   profile:         null,
   unit:            'lbs',   // 'lbs' | 'kg'
   program:         'lite_viking',  // profiles.active_program
+  goals:           {},      // { squat: { id, target_weight_lbs }, … } (shared by both programs)
+  goalShown:       {},      // text currently shown per goal input, to detect edits
   weightIncrement: 5,       // lbs — saved value, loaded from profile
   pendingIncrement: 5,      // lbs — selected but not yet saved
 };
@@ -35,6 +37,9 @@ const DOM = {
   inputBodyweight: document.getElementById('input-bodyweight'),
   btnSaveProfile:  document.getElementById('btn-save-profile'),
   feedbackProfile: document.getElementById('feedback-profile'),
+  // Goals
+  btnSaveGoals:    document.getElementById('btn-save-goals'),
+  feedbackGoals:   document.getElementById('feedback-goals'),
   // Equipment
   inputBarbell:    document.getElementById('input-barbell'),
   btnSaveEquip:    document.getElementById('btn-save-equipment'),
@@ -179,6 +184,84 @@ async function saveProfile() {
 }
 
 // ================================================================
+// Goals (target weight per lift, shared by both programs)
+// ================================================================
+
+const GOAL_LIFTS = ['squat', 'press', 'bench', 'deadlift'];
+
+function goalInput(lift) {
+  return document.getElementById(`input-goal-${lift}`);
+}
+
+// Show each goal in the current unit; remember what was shown so that only
+// edited goals are saved (a kg round trip would otherwise drift the stored lbs)
+function fillGoals() {
+  GOAL_LIFTS.forEach(lift => {
+    const lbs  = state.goals[lift]?.target_weight_lbs;
+    const text = lbs == null ? '' : String(state.unit === 'kg' ? convertToKg(lbs) : lbs);
+    goalInput(lift).value  = text;
+    state.goalShown[lift]  = text;
+  });
+}
+
+async function saveGoals() {
+  if (!DOM.btnSaveGoals.classList.contains('dirty')) return;
+
+  const changes = [];
+  for (const lift of GOAL_LIFTS) {
+    const input = goalInput(lift);
+    const text  = input.value.trim();
+
+    if (text === '' || text === state.goalShown[lift]) continue;   // blank or unchanged
+
+    const raw = parseFloat(text);
+    if (isNaN(raw) || raw <= 0) {
+      input.focus();
+      return;
+    }
+    changes.push({ lift, lbs: state.unit === 'kg' ? kgToLbs(raw) : raw });
+  }
+
+  if (changes.length === 0) {
+    markClean(DOM.btnSaveGoals);
+    return;
+  }
+
+  setLoading(DOM.btnSaveGoals, true);
+
+  const results = await Promise.all(changes.map(async ({ lift, lbs }) => {
+    const existing = state.goals[lift];
+
+    if (existing) {
+      const { error } = await supabase
+        .from('goals')
+        .update({ target_weight_lbs: lbs })
+        .eq('id', existing.id);
+      return { lift, lbs, id: existing.id, error };
+    }
+
+    const { data, error } = await supabase
+      .from('goals')
+      .insert({ user_id: state.user.id, exercise: lift, target_weight_lbs: lbs })
+      .select('id')
+      .single();
+    return { lift, lbs, id: data?.id, error };
+  }));
+
+  setLoading(DOM.btnSaveGoals, false);
+
+  // Keep what saved; if anything failed, leave the button dirty to retry
+  results.filter(r => !r.error).forEach(r => {
+    state.goals[r.lift] = { id: r.id, target_weight_lbs: r.lbs };
+  });
+  if (results.some(r => r.error)) return;
+
+  fillGoals();
+  markClean(DOM.btnSaveGoals);
+  showFeedback(DOM.feedbackGoals);
+}
+
+// ================================================================
 // Save — Equipment
 // ================================================================
 
@@ -228,6 +311,10 @@ async function saveUnit(newUnit) {
 
   const bbLbs = parseFloat(state.profile.barbell_weight_lbs ?? 45);
   DOM.inputBarbell.value = newUnit === 'kg' ? lbsToKg(bbLbs) : bbLbs;
+
+  // Goals: redisplay from the stored lbs in the new unit (drops unsaved edits)
+  fillGoals();
+  markClean(DOM.btnSaveGoals);
 
   // Persist — fire and forget, no spinner (instant feel)
   await supabase
@@ -364,7 +451,13 @@ async function handleLogout() {
 function setupListeners() {
   DOM.btnSaveProfile.addEventListener('click', saveProfile);
   DOM.btnSaveEquip.addEventListener('click', saveEquipment);
+  DOM.btnSaveGoals.addEventListener('click', saveGoals);
   DOM.btnSaveTimers.addEventListener('click', saveTimers);
+
+  GOAL_LIFTS.forEach(lift => {
+    goalInput(lift).addEventListener('input', () => markDirty(DOM.btnSaveGoals));
+    goalInput(lift).addEventListener('keydown', e => { if (e.key === 'Enter') saveGoals(); });
+  });
   DOM.btnLogout.addEventListener('click', handleLogout);
 
   DOM.toggleBtns.forEach(btn => {
@@ -406,14 +499,25 @@ async function init() {
   if (!state.user) return;
 
   // Load profile + email in parallel
-  const [profileRes, userRes] = await Promise.all([
+  const [profileRes, userRes, goalsRes] = await Promise.all([
     supabase
       .from('profiles')
       .select('*')
       .eq('id', state.user.id)
       .maybeSingle(),
     supabase.auth.getUser(),
+    supabase
+      .from('goals')
+      .select('id, exercise, target_weight_lbs')
+      .eq('user_id', state.user.id),
   ]);
+
+  (goalsRes.data ?? []).forEach(g => {
+    state.goals[g.exercise] = {
+      id:                g.id,
+      target_weight_lbs: parseFloat(g.target_weight_lbs),
+    };
+  });
 
   state.profile = profileRes.data ?? {};
   state.unit    = state.profile.unit_preference ?? 'lbs';
@@ -432,6 +536,7 @@ async function init() {
   DOM.displayEmail.textContent = email;
 
   fillForm();
+  fillGoals();
   setupListeners();
 }
 

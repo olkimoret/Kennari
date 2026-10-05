@@ -408,6 +408,7 @@ Same look as 9.4 (shared `workout.css`), different behavior. Lite Viking users w
 ### 9.7 Settings (`settings.html`)
 Sections, each saved independently:
 - **Profile:** display name, age, bodyweight (Save button)
+- **Goals:** a target weight per lift (Squat, Press, Bench Press, Deadlift) in the user's unit, shared by both programs and the same `goals` rows the Tracking tab edits. A Save button appears when something changed; only edited goals are written (an unchanged goal is never re-saved, so unit conversion cannot drift it), blank fields are left as they are, and a lift with no goal yet gets one created. Switching units redisplays the stored goals in the new unit.
 - **Equipment:** barbell weight (Save button)
 - **Units:** lbs / kg toggle (saves immediately, no Save button)
 - **Rest Timers:** warm up and working seconds (Save button)
