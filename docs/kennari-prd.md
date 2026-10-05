@@ -98,7 +98,8 @@ Kennari-App/
 ├── workout531.js         ← 5/3/1 workout UI, uses program531.js
 ├── workout.css           ← shared workout styling (both workout pages link it)
 ├── tracking.html         ← progress charts + goals
-├── tracking.js           ← chart rendering, goals, personal best
+├── tracking.js           ← Lite Viking chart rendering, goals, personal best
+├── tracking531.js        ← 5/3/1 tracking (reps, estimated 1RM, training max)
 ├── settings.html         ← user preferences
 ├── settings.js           ← settings logic
 ├── style.css             ← global design system
@@ -393,7 +394,16 @@ Same look as 9.4 (shared `workout.css`), different behavior. Lite Viking users w
 - Goal card: current vs goal, percentage bar, "Edit goal" (saves to `goals`)
 - Personal best card: heaviest logged working set for the exercise (shown with "5 reps")
 - Reads only completed Lite Viking sessions
-- **5/3/1 users** see a single card, "Tracking for 5/3/1 is coming soon", instead of the pills, chart, goal and personal best cards. No data is loaded for them.
+- **5/3/1 users** get the same page driven by `tracking531.js` (loaded by `tracking.js` only for them; Lite Viking code is untouched):
+  - **Pills:** the same four lifts, starting on Press. Data for all lifts loads once; switching lifts does not refetch.
+  - **Metric toggle (new row in the chart card): REPS · EST. 1RM · TRAINING MAX**, plus the same 4W / 8W / ALL range.
+    - **Reps:** reps on the last working set (the AMRAP set) of each regular workout, weeks 1 to 3, with a dashed line for the minimum reps. The tooltip also shows the weight used. Deload weeks have no AMRAP and are skipped. The test is not plotted, because it is done at a different load.
+    - **Est. 1RM:** `weight x reps x 0.0333 + weight` for the test and each AMRAP set, with a dashed goal line.
+    - **Training max:** the test's training max, then the max in force at every completed workout of that lift (it steps up each cycle), with a dashed goal line.
+  - **Goal card:** latest estimated 1RM against the goal (goals are targets for the lift, not for the training max). Editing a goal works as in Lite Viking and is shared.
+  - **Best Estimated 1RM card** (replaces Personal Best): best estimated 1RM with the weight and reps that produced it.
+  - A chart needs at least 2 points in the selected range; otherwise it shows an explanation. A lift that has not been tested yet says so.
+  - Position (week, cycle) is derived from the order of completed regular sessions, as in the engine.
 
 ### 9.7 Settings (`settings.html`)
 Sections, each saved independently:
