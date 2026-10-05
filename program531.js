@@ -38,13 +38,13 @@ const WARMUP_SCHEME = [
 
 // Work sets by week (percent of training max)
 export const WEEK_SCHEME = {
-  1: { label: '5s',     sets: [
+  1: { label: 'SETS OF 5', sets: [
     { pct: 0.65, reps: 5 }, { pct: 0.75, reps: 5 }, { pct: 0.85, reps: 5, amrap: true } ] },
-  2: { label: '3s',     sets: [
+  2: { label: 'SETS OF 3', sets: [
     { pct: 0.70, reps: 3 }, { pct: 0.80, reps: 3 }, { pct: 0.90, reps: 3, amrap: true } ] },
-  3: { label: '5/3/1',  sets: [
+  3: { label: '5/3/1',     sets: [
     { pct: 0.75, reps: 5 }, { pct: 0.85, reps: 3 }, { pct: 0.95, reps: 1, amrap: true } ] },
-  4: { label: 'DELOAD', sets: [
+  4: { label: 'DELOAD',    sets: [
     { pct: 0.40, reps: 5 }, { pct: 0.50, reps: 5 }, { pct: 0.60, reps: 5 } ] },
 };
 
@@ -183,8 +183,7 @@ export async function getCurrentTM(userId, lift, cycle) {
 // Test workout: warmupSets / workingSets are empty until the user enters a
 // test weight; then call getTestSets(testWeightLbs).
 export async function get531Workout(userId) {
-  const pos      = await get531Position(userId);
-  const liftName = pos.lift.toUpperCase();
+  const pos = await get531Position(userId);
 
   if (pos.phase === 'test') {
     return {
@@ -195,7 +194,7 @@ export async function get531Workout(userId) {
       cycle:           null,
       n:               pos.n,
       tmLbs:           null,
-      label:           `TEST · ${liftName}`,
+      label:           'TEST DAY',
       needsTestWeight: true,
       warmupSets:      [],
       workingSets:     [],
@@ -215,7 +214,7 @@ export async function get531Workout(userId) {
     cycle:           pos.cycle,
     n:               pos.n,
     tmLbs:           tm,
-    label:           `WEEK ${pos.week} · ${WEEK_SCHEME[pos.week].label} · ${liftName}`,
+    label:           `WEEK ${pos.week} · ${WEEK_SCHEME[pos.week].label}`,
     needsTestWeight: false,
     warmupSets:      getWarmupSets531(tm),
     workingSets:     getWorkingSets531(tm, pos.week),

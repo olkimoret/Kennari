@@ -334,7 +334,7 @@ Note: Home reads `active_program`, but Workout does not yet. A 5/3/1 account is 
 - "Your Next Workout" card: "TRAINING A" or "TRAINING B", exercise list with set counts (e.g. "3×5"), "~45 min"
 - Random tip from a hardcoded list
 - "Start Workout" CTA → `workout.html`
-- **Program-aware:** reads `profiles.active_program`. Lite Viking: as above. 5/3/1: the card shows the label from `get531Workout` (for example "TEST · PRESS" or "WEEK 2 · 3s · BENCH") and the single lift ("Test" or "3 sets"), and the greeting's session count and last-workout date come from completed 5/3/1 rows in `sessions`, not `profiles.session_count`. If the 5/3/1 workout fails to load, the card shows "Couldn't load your workout".
+- **Program-aware:** reads `profiles.active_program`. Lite Viking: as above. 5/3/1: the card shows the label from `get531Workout` (for example "TEST DAY" or "WEEK 2 · SETS OF 3") and the single lift ("Test" or "3 sets"), and the greeting's session count and last-workout date come from completed 5/3/1 rows in `sessions`, not `profiles.session_count`. If the 5/3/1 workout fails to load, the card shows "Couldn't load your workout".
 
 ### 9.4 Workout Screen (`workout.html`) ← CORE
 
@@ -372,7 +372,7 @@ Note: Home reads `active_program`, but Workout does not yet. A 5/3/1 account is 
 
 ### 9.4b Workout Screen, 5/3/1 (`workout531.html`)
 Same look as 9.4 (shared `workout.css`), different behavior. Lite Viking users who open it are redirected to `workout.html`, and 5/3/1 users who open `workout.html` are redirected here.
-- **One lift per workout.** Header label from `get531Workout` (for example "TEST · PRESS", "WEEK 1 · 5s · PRESS", "WEEK 4 · DELOAD · PRESS"). One card with 3 warmup dots, then 3 working dots (1 on test days). No weight adjust popup.
+- **One lift per workout.** Header label from `get531Workout` (for example "TEST DAY", "WEEK 1 · SETS OF 5", "WEEK 4 · DELOAD"; the lift is the screen title, so it is not repeated in the label). One card with 3 warmup dots, then 3 working dots (1 on test days). No weight adjust popup.
 - **Test day:** a bottom card first asks for the test weight (hint text from the spec, −/+ and typed entry, "Start" appears once a weight is set, "Not now" returns Home). Then warmup (40/50/60% of the test weight), then the test set shown as "5+ REPS".
 - **Last working set** (AMRAP in weeks 1-3 and the test set): after Complete Set, a reps card with a large −/+ stepper prefilled with the target (1 to 50) and a Confirm button. Tapping outside cancels and the set is not completed. Saved as `reps_completed`.
 - **Saving:** warmups are never saved. Working sets are saved with the session (`program = '531'`, `workout_day` = lift, `is_test` on test days). On a test day the training max is saved to `training_maxes` before the session is completed.

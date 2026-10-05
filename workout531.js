@@ -501,7 +501,8 @@ function showCompletion() {
       `${EXERCISE_LABELS[w.lift] ?? w.lift} test done. ` +
       `Your training max is ${displayWeightValue(state.testTmLbs)} ${unit}.`;
   } else {
-    DOM.completionSub.textContent = `${w.label} done.`;
+    DOM.completionSub.textContent =
+      `${EXERCISE_LABELS[w.lift] ?? w.lift}, week ${w.week} done.`;
   }
   DOM.completion.hidden = false;
 }
