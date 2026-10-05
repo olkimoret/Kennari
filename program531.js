@@ -44,7 +44,7 @@ export const WEEK_SCHEME = {
     { pct: 0.70, reps: 3 }, { pct: 0.80, reps: 3 }, { pct: 0.90, reps: 3, amrap: true } ] },
   3: { label: '5/3/1',  sets: [
     { pct: 0.75, reps: 5 }, { pct: 0.85, reps: 3 }, { pct: 0.95, reps: 1, amrap: true } ] },
-  4: { label: 'Deload', sets: [
+  4: { label: 'DELOAD', sets: [
     { pct: 0.40, reps: 5 }, { pct: 0.50, reps: 5 }, { pct: 0.60, reps: 5 } ] },
 };
 

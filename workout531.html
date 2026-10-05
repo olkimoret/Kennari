@@ -25,10 +25,10 @@
     <!-- ── Main content ──────────────────────────────────── -->
     <main class="workout-main">
 
-      <!-- Exercise name -->
+      <!-- Lift name + workout label -->
       <div class="exercise-info">
         <h2 id="exercise-name" class="exercise-name">—</h2>
-        <p id="session-label" class="session-sub label-caps">TRAINING A</p>
+        <p id="session-label" class="session-sub label-caps">&nbsp;</p>
       </div>
 
       <!-- Weight display card -->
@@ -38,13 +38,6 @@
           <span id="weight-number" class="weight-number">—</span>
           <div class="weight-unit-group">
             <span id="weight-unit" class="weight-unit">LBS</span>
-            <button id="btn-adjust-weight" class="weight-edit-btn" type="button" aria-label="Adjust weight">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                   stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-              </svg>
-            </button>
           </div>
         </div>
 
@@ -87,13 +80,13 @@
 
       <!-- Set info -->
       <div class="set-tracker">
-        <p id="reps-label" class="reps-label">5 REPS</p>
-        <p id="set-label" class="label-caps set-label-text">SET 1 / 4 · 40%</p>
+        <p id="reps-label" class="reps-label">—</p>
+        <p id="set-label" class="label-caps set-label-text">&nbsp;</p>
       </div>
 
-      <!-- Exercise cards -->
+      <!-- Lift card with set dots -->
       <div id="exercise-cards" class="exercise-cards">
-        <!-- injected by workout.js -->
+        <!-- injected by workout531.js -->
       </div>
 
     </main>
@@ -109,7 +102,7 @@
     <nav class="bottom-nav">
 
       <button class="nav-tab active" type="button"
-              onclick="location.href='workout.html'" aria-label="Workout">
+              onclick="location.href='workout531.html'" aria-label="Workout">
         <svg viewBox="0 0 24 24" fill="currentColor">
           <rect x="9"    y="11"  width="6"   height="2"/>
           <rect x="1"    y="8"   width="7.5" height="8" rx="2.5"/>
@@ -159,7 +152,7 @@
     <div id="confirm-card" class="timer-card confirm-card">
       <div class="timer-handle"></div>
       <p class="confirm-heading">Done for today?</p>
-      <p class="confirm-sub">Your progress so far will be saved.</p>
+      <p class="confirm-sub">This workout won't count yet. You'll start it again next time.</p>
       <div class="confirm-actions">
         <button id="btn-confirm-yes" class="btn-primary" type="button">
           Yes, stop workout
@@ -185,26 +178,59 @@
       <button id="btn-skip-rest" class="btn-ghost timer-skip-btn" type="button">Skip Rest</button>
     </div>
 
-    <!-- ── Weight adjust overlay + card ────────────────── -->
-    <div id="adjust-overlay" class="timer-overlay"></div>
-    <div id="adjust-card" class="timer-card adjust-card">
+    <!-- ── Test weight overlay + card (test days only) ──── -->
+    <div id="testweight-overlay" class="timer-overlay"></div>
+    <div id="testweight-card" class="timer-card adjust-card">
       <div class="timer-handle"></div>
-      <p class="label-caps">Adjust Weight</p>
-      <div class="adjust-weight-display">
-        <span id="adjust-weight-number" class="adjust-weight-number">—</span>
-        <span id="adjust-weight-unit" class="adjust-weight-unit">LBS</span>
+      <h3 class="sheet-title">Test weight</h3>
+      <p class="sheet-instruction">Pick a weight you can lift about 5 times with good form.</p>
+      <p class="sheet-help">You'll do as many clean reps as you can. Stop when your form starts to break, not at failure.</p>
+
+      <div class="sheet-section">
+        <div class="adjust-weight-display">
+          <span id="testweight-number" class="adjust-weight-number">45</span>
+          <span id="testweight-unit" class="adjust-weight-unit">LBS</span>
+        </div>
+        <div class="adjust-btn-row">
+          <button id="btn-testweight-minus" class="btn-secondary btn-adjust" type="button">− 5</button>
+          <button id="btn-testweight-plus"  class="btn-secondary btn-adjust" type="button">+ 5</button>
+        </div>
+        <input id="testweight-input" type="number" class="input-field"
+               placeholder="or enter weight" inputmode="decimal" />
       </div>
-      <div class="adjust-btn-row">
-        <button id="btn-adjust-minus" class="btn-secondary btn-adjust" type="button">− 5</button>
-        <button id="btn-adjust-plus"  class="btn-secondary btn-adjust" type="button">+ 5</button>
+
+      <div class="sheet-section">
+        <button id="btn-testweight-start" class="btn-primary" type="button">Start</button>
+        <button id="btn-testweight-cancel" class="btn-ghost btn-link-muted" type="button">Not now</button>
       </div>
-      <input id="adjust-input" type="number" class="input-field"
-             placeholder="or enter weight" inputmode="decimal" />
-      <button id="btn-adjust-save" class="btn-primary adjust-save-btn" type="button">Save</button>
     </div>
+
+    <!-- ── Reps overlay + card (last working set) ──────── -->
+    <div id="reps-overlay" class="timer-overlay"></div>
+    <div id="reps-card" class="timer-card adjust-card">
+      <div class="timer-handle"></div>
+      <h3 class="sheet-title">How many reps did you do?</h3>
+
+      <div class="sheet-section">
+        <div class="adjust-weight-display">
+          <span id="reps-number" class="reps-number">5</span>
+          <span class="adjust-weight-unit">REPS</span>
+        </div>
+        <div class="adjust-btn-row">
+          <button id="btn-reps-minus" class="btn-secondary btn-adjust reps-btn" type="button">− 1</button>
+          <button id="btn-reps-plus"  class="btn-secondary btn-adjust reps-btn" type="button">+ 1</button>
+        </div>
+      </div>
+
+      <div class="sheet-section">
+        <button id="btn-reps-confirm" class="btn-primary" type="button">Confirm</button>
+      </div>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   </div><!-- #workout-screen -->
 
-  <script type="module" src="workout.js"></script>
+  <script type="module" src="workout531.js"></script>
 </body>
 </html>

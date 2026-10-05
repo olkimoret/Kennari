@@ -737,6 +737,12 @@ async function init() {
     .eq('id', state.user.id)
     .maybeSingle();
 
+  // 5/3/1 users belong on the other workout screen
+  if (profile?.active_program === '531') {
+    window.location.replace('workout531.html');
+    return;
+  }
+
   state.profile          = profile;
   state.weightIncrement  = parseFloat(profile?.weight_increment_lbs ?? 5);
 

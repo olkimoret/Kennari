@@ -5,6 +5,7 @@
 import { supabase }            from './supabase.js';
 import { requireAuth }         from './app.js';
 import { getNextWorkoutDay, EXERCISE_LABELS } from './program.js';
+import { get531Workout }                      from './program531.js';
 
 // ================================================================
 // Local program constants
@@ -49,6 +50,9 @@ const state = {
   profile:     null,
   lastSession: null,   // { completed_at, session_number } | null
   nextDay:     'A',
+  program:     'lite_viking',  // profiles.active_program
+  sessionCount: 0,     // completed sessions for the active program
+  workout531:  null,   // get531Workout() result, 5/3/1 only
 };
 
 // ================================================================
@@ -84,7 +88,7 @@ function daysSince(dateStr) {
 
 function renderGreeting() {
   const name      = state.profile?.name ?? 'there';
-  const count     = state.profile?.session_count ?? 0;
+  const count     = state.sessionCount;
   const lastDate  = state.lastSession?.completed_at;
 
   let greeting, lastText;
@@ -118,7 +122,35 @@ function renderGreeting() {
 // Render — Workout preview card
 // ================================================================
 
+function renderWorkoutCard531() {
+  const w = state.workout531;
+
+  if (!w) {
+    DOM.trainingDay.textContent = '—';
+    DOM.exerciseList.innerHTML = `
+      <li>
+        <span class="exercise-name">Couldn't load your workout</span>
+      </li>`;
+    return;
+  }
+
+  const label  = EXERCISE_LABELS[w.lift] ?? w.lift;
+  const detail = w.kind === 'test' ? 'Test' : `${w.workingSets.length} sets`;
+
+  DOM.trainingDay.textContent = w.label;
+  DOM.exerciseList.innerHTML = `
+    <li>
+      <span class="exercise-name">${label}</span>
+      <span class="exercise-sets">${detail}</span>
+    </li>`;
+}
+
 function renderWorkoutCard() {
+  if (state.program === '531') {
+    renderWorkoutCard531();
+    return;
+  }
+
   const day       = state.nextDay;
   const exercises = DAY_EXERCISES[day];
 
@@ -154,7 +186,10 @@ function setupStartButton() {
     // Navigate after animation completes (300ms)
     DOM.btnStart.addEventListener(
       'animationend',
-      () => { window.location.href = 'workout.html'; },
+      () => {
+        window.location.href =
+          state.program === '531' ? 'workout531.html' : 'workout.html';
+      },
       { once: true },
     );
   });
@@ -164,18 +199,9 @@ function setupStartButton() {
 // Init
 // ================================================================
 
-async function init() {
-  state.user = await requireAuth();
-  if (!state.user) return;
-
-  // Load profile, last session, and next workout day in parallel
-  const [profileRes, sessionRes, nextDay] = await Promise.all([
-    supabase
-      .from('profiles')
-      .select('name, session_count, unit_preference')
-      .eq('id', state.user.id)
-      .maybeSingle(),
-
+// Lite Viking: last session + next A/B day. Count comes from the profile.
+async function loadLiteViking() {
+  const [sessionRes, nextDay] = await Promise.all([
     supabase
       .from('sessions')
       .select('completed_at, session_number')
@@ -189,9 +215,59 @@ async function init() {
     getNextWorkoutDay(state.user.id),
   ]);
 
-  state.profile     = profileRes.data ?? {};
-  state.lastSession = sessionRes.data ?? null;
-  state.nextDay     = nextDay;
+  state.lastSession  = sessionRes.data ?? null;
+  state.nextDay      = nextDay;
+  state.sessionCount = state.profile?.session_count ?? 0;
+}
+
+// 5/3/1: last session + count derived from sessions (not profiles.session_count)
+// + today's workout from the 5/3/1 engine.
+async function load531() {
+  const [sessionRes, countRes, workout] = await Promise.all([
+    supabase
+      .from('sessions')
+      .select('completed_at, session_number')
+      .eq('user_id', state.user.id)
+      .eq('program', '531')
+      .not('completed_at', 'is', null)
+      .order('session_number', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+
+    supabase
+      .from('sessions')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', state.user.id)
+      .eq('program', '531')
+      .not('completed_at', 'is', null),
+
+    get531Workout(state.user.id).catch(err => {
+      console.error('Could not load 5/3/1 workout', err);
+      return null;
+    }),
+  ]);
+
+  state.lastSession  = sessionRes.data ?? null;
+  state.sessionCount = countRes.count ?? 0;
+  state.workout531   = workout;
+}
+
+async function init() {
+  state.user = await requireAuth();
+  if (!state.user) return;
+
+  // Profile first: it says which program to load
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('name, session_count, unit_preference, active_program')
+    .eq('id', state.user.id)
+    .maybeSingle();
+
+  state.profile = profile ?? {};
+  state.program = state.profile.active_program ?? 'lite_viking';
+
+  if (state.program === '531') await load531();
+  else                         await loadLiteViking();
 
   renderGreeting();
   renderWorkoutCard();
