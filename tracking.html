@@ -271,6 +271,15 @@
       letter-spacing: 0.06em;
       text-transform: uppercase;
     }
+
+    /* 5/3/1 placeholder (replaces the chart for 5/3/1 users) */
+    .coming-soon {
+      text-align: center;
+      padding: 40px 24px;
+      font-size: var(--text-base);
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
   </style>
 </head>
 <body>
@@ -283,6 +292,11 @@
 
     <!-- ── Main content ───────────────────────────────── -->
     <main class="tracking-main">
+
+      <!-- 5/3/1 placeholder (shown by tracking.js for 5/3/1 users) -->
+      <div id="tracking-531" class="card coming-soon" style="display:none">
+        Tracking for 5/3/1 is coming soon
+      </div>
 
       <!-- Exercise pill selector -->
       <div class="ex-selector-wrap">

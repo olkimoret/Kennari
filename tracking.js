@@ -495,6 +495,14 @@ async function init() {
 
   state.profile = profile;
 
+  // 5/3/1 users: placeholder instead of the Lite Viking chart, goal and PB cards
+  if (profile?.active_program === '531') {
+    document.querySelectorAll('.ex-selector-wrap, .chart-card, .goal-card, .pb-card')
+      .forEach(el => { el.style.display = 'none'; });
+    document.getElementById('tracking-531').style.display = 'block';
+    return;
+  }
+
   // Load sessions list + goals (parallel), then exercise-specific data
   await loadInitialData();
   await loadExerciseData();

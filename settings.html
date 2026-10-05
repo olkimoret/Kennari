@@ -252,6 +252,41 @@
     .btn-save.loading            { cursor: default; }
 
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---- 5/3/1 training maxes (read-only list) ---- */
+    .tm-list {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .tm-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tm-row:last-child { border-bottom: none; }
+
+    .tm-lift {
+      font-size: var(--text-base);
+      font-weight: 500;
+      color: var(--cream);
+    }
+
+    .tm-value {
+      font-size: var(--text-base);
+      font-weight: 600;
+      color: var(--cream);
+      white-space: nowrap;
+    }
+
+    .tm-value.untested {
+      font-weight: 400;
+      color: var(--text-muted);
+    }
   </style>
 </head>
 <body>
@@ -372,8 +407,8 @@
         </div>
       </div>
 
-      <!-- ─── PROGRESSION ────────────────────────────── -->
-      <div class="settings-section">
+      <!-- ─── PROGRESSION (Lite Viking only; shown by settings.js) ── -->
+      <div class="settings-section" id="section-progression" style="display:none">
         <span class="label-caps section-label">Progression</span>
         <div class="card settings-card">
 
@@ -395,6 +430,17 @@
               <span class="spinner" aria-hidden="true"></span>
             </button>
           </div>
+
+        </div>
+      </div>
+
+      <!-- ─── TRAINING MAXES (5/3/1 only; shown by settings.js) ─── -->
+      <div class="settings-section" id="section-531" style="display:none">
+        <span class="label-caps section-label">Training Maxes</span>
+        <div class="card settings-card">
+
+          <div id="tm-list" class="tm-list"></div>
+          <p class="helper-text">Your training maxes go up automatically after each 4-week cycle.</p>
 
         </div>
       </div>

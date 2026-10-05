@@ -8,6 +8,8 @@
 
 import { supabase, signOut } from './supabase.js';
 import { requireAuth }       from './app.js';
+import { convertToKg, EXERCISE_LABELS } from './program.js';
+import { LIFT_ORDER, get531Position, getCurrentTM } from './program531.js';
 
 // ================================================================
 // State
@@ -17,6 +19,7 @@ const state = {
   user:            null,
   profile:         null,
   unit:            'lbs',   // 'lbs' | 'kg'
+  program:         'lite_viking',  // profiles.active_program
   weightIncrement: 5,       // lbs — saved value, loaded from profile
   pendingIncrement: 5,      // lbs — selected but not yet saved
 };
@@ -233,6 +236,8 @@ async function saveUnit(newUnit) {
     .eq('id', state.user.id);
 
   state.profile.unit_preference = newUnit;
+
+  if (state.program === '531') render531Maxes();
 }
 
 // ================================================================
@@ -299,6 +304,44 @@ async function saveTimers() {
     state.profile.rest_working_seconds = working;
     markClean(DOM.btnSaveTimers);
     showFeedback(DOM.feedbackTimers);
+  }
+}
+
+// ================================================================
+// 5/3/1 — training maxes (read-only)
+// ================================================================
+
+async function render531Maxes() {
+  const list = document.getElementById('tm-list');
+
+  try {
+    const pos   = await get531Position(state.user.id);
+    const cycle = pos.phase === 'program' ? pos.cycle : 1;
+
+    const rows = await Promise.all(LIFT_ORDER.map(async lift => ({
+      lift,
+      tm: await getCurrentTM(state.user.id, lift, cycle),
+    })));
+
+    list.innerHTML = rows.map(({ lift, tm }) => {
+      const label = EXERCISE_LABELS[lift] ?? lift;
+      if (tm === null) {
+        return `<div class="tm-row">
+          <span class="tm-lift">${label}</span>
+          <span class="tm-value untested">Not tested yet</span>
+        </div>`;
+      }
+      const value = state.unit === 'kg' ? convertToKg(tm) : tm;
+      return `<div class="tm-row">
+        <span class="tm-lift">${label}</span>
+        <span class="tm-value">${value} ${state.unit.toUpperCase()}</span>
+      </div>`;
+    }).join('');
+  } catch (err) {
+    console.error('Could not load training maxes', err);
+    list.innerHTML = `<div class="tm-row">
+      <span class="tm-lift">Couldn't load your training maxes</span>
+    </div>`;
   }
 }
 
@@ -374,6 +417,15 @@ async function init() {
 
   state.profile = profileRes.data ?? {};
   state.unit    = state.profile.unit_preference ?? 'lbs';
+  state.program = state.profile.active_program ?? 'lite_viking';
+
+  // Program-specific section: Progression (Lite Viking) or Training Maxes (5/3/1)
+  if (state.program === '531') {
+    document.getElementById('section-531').style.display = '';
+    render531Maxes();
+  } else {
+    document.getElementById('section-progression').style.display = '';
+  }
 
   // Show email
   const email = userRes.data?.user?.email ?? state.user.email ?? '—';

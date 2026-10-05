@@ -393,6 +393,7 @@ Same look as 9.4 (shared `workout.css`), different behavior. Lite Viking users w
 - Goal card: current vs goal, percentage bar, "Edit goal" (saves to `goals`)
 - Personal best card: heaviest logged working set for the exercise (shown with "5 reps")
 - Reads only completed Lite Viking sessions
+- **5/3/1 users** see a single card, "Tracking for 5/3/1 is coming soon", instead of the pills, chart, goal and personal best cards. No data is loaded for them.
 
 ### 9.7 Settings (`settings.html`)
 Sections, each saved independently:
@@ -400,7 +401,9 @@ Sections, each saved independently:
 - **Equipment:** barbell weight (Save button)
 - **Units:** lbs / kg toggle (saves immediately, no Save button)
 - **Rest Timers:** warm up and working seconds (Save button)
-- **Progression:** "Weight added each session": 2.5 / 5 / 10 lbs, with a kg equivalent label. The saved value is highlighted on open; picking another enables the Save button (`weight_increment_lbs`)
+- **Program-specific section** (one is shown, chosen by `profiles.active_program`; every other section above and below is shared by both programs):
+  - **Lite Viking, Progression:** "Weight added each session": 2.5 / 5 / 10 lbs, with a kg equivalent label. The saved value is highlighted on open; picking another enables the Save button (`weight_increment_lbs`)
+  - **5/3/1, Training Maxes:** read-only list of the four lifts with each current training max (cycle-adjusted, in the user's unit) or "Not tested yet", and a note that maxes go up automatically after each 4-week cycle. Re-testing or editing a max is out of scope for now.
 - **Account:** shows email, Log out
 
 ---
