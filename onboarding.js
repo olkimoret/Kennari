@@ -1,9 +1,11 @@
 /* Kennari — onboarding.js
-   4-step onboarding:
+   5-step onboarding:
+     0. Program choice (Lite Viking / 5/3/1)
      1. Name & age
      2. Bodyweight & barbell weight
-     3. Starting weights (optional — falls back to barbell weight)
+     3. Starting weights (Lite Viking only — optional, falls back to barbell weight)
      4. Goals preview + save
+   5/3/1 skips step 3: test days replace starting weights.
    ----------------------------------------------------------------- */
 
 import { supabase, getUser } from './supabase.js';
@@ -14,7 +16,8 @@ import { supabase, getUser } from './supabase.js';
 
 let currentUser = null;
 let currentUnit = 'lbs';
-let currentStep = 1;
+let currentStep = 0;
+let currentProgram = null;   // 'lite_viking' | '531' — chosen on step 0
 
 // ================================================================
 // Init — auth guard + skip if already onboarded
@@ -51,9 +54,20 @@ async function init() {
 const stepEls = document.querySelectorAll('.ob-step');
 const dotEls  = document.querySelectorAll('.pdot');
 
+// Steps the current program goes through, in order
+function visibleSteps() {
+  return currentProgram === '531' ? [0, 1, 2, 4] : [0, 1, 2, 3, 4];
+}
+
 function goToStep(n) {
-  stepEls.forEach((s, i) => s.classList.toggle('active', i === n - 1));
-  dotEls.forEach((d, i)  => d.classList.toggle('active', i < n));
+  const visible = visibleSteps();
+  const pos     = visible.indexOf(n);
+
+  stepEls.forEach((s, i) => s.classList.toggle('active', i === n));
+  dotEls.forEach((d, i)  => {
+    d.style.display = i < visible.length ? '' : 'none';
+    d.classList.toggle('active', i <= pos);
+  });
   currentStep = n;
   window.scrollTo({ top: 0, behavior: 'smooth' });
   if (n === 4) renderGoals();
@@ -216,6 +230,15 @@ function isValidNum(n) {
   return !isNaN(n) && n > 0;
 }
 
+function validateStep0() {
+  clearError('error-0');
+  if (!currentProgram) {
+    showError('error-0', 'Please choose a program.');
+    return false;
+  }
+  return true;
+}
+
 function validateStep1() {
   clearError('error-1');
   const name = getVal('name');
@@ -276,6 +299,7 @@ async function saveAndRedirect() {
       unit_preference:    currentUnit,
       barbell_weight_lbs: barbellWeightLbs,
       session_count:      0,
+      active_program:     currentProgram,
     });
 
   if (profileError) {
@@ -285,23 +309,25 @@ async function saveAndRedirect() {
     return;
   }
 
-  // 2 — starting_weights
+  // 2 — starting_weights (Lite Viking only; 5/3/1 uses test days instead)
   // Use entered value if provided; fall back to barbell weight for any empty field
-  const weightRows = Object.keys(GOAL_MULTIPLIERS).map(ex => ({
-    user_id:    currentUser.id,
-    exercise:   ex,
-    weight_lbs: getWeightInLbs(`weight-${ex}`) ?? barbellWeightLbs,
-  }));
+  if (currentProgram === 'lite_viking') {
+    const weightRows = Object.keys(GOAL_MULTIPLIERS).map(ex => ({
+      user_id:    currentUser.id,
+      exercise:   ex,
+      weight_lbs: getWeightInLbs(`weight-${ex}`) ?? barbellWeightLbs,
+    }));
 
-  const { error: weightsError } = await supabase
-    .from('starting_weights')
-    .insert(weightRows);
+    const { error: weightsError } = await supabase
+      .from('starting_weights')
+      .insert(weightRows);
 
-  if (weightsError) {
-    showError('error-4', 'Could not save your starting weights. Please try again.');
-    btnStart.disabled = false;
-    btnStart.classList.remove('loading');
-    return;
+    if (weightsError) {
+      showError('error-4', 'Could not save your starting weights. Please try again.');
+      btnStart.disabled = false;
+      btnStart.classList.remove('loading');
+      return;
+    }
   }
 
   // 3 — goals
@@ -334,15 +360,33 @@ function setupListeners() {
   setupUnitToggle();
   setupSkipNext();
 
+  // Step 0 — program choice
+  const programBtns = document.querySelectorAll('.program-option');
+  programBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentProgram = btn.dataset.program;
+      programBtns.forEach(b => {
+        const on = b === btn;
+        b.classList.toggle('selected', on);
+        b.setAttribute('aria-checked', String(on));
+      });
+      clearError('error-0');
+    });
+  });
+  document.getElementById('btn-next-0').addEventListener('click', () => {
+    if (validateStep0()) goToStep(1);
+  });
+
   // Step 1
+  document.getElementById('btn-back-1').addEventListener('click', () => goToStep(0));
   document.getElementById('btn-next-1').addEventListener('click', () => {
     if (validateStep1()) goToStep(2);
   });
 
-  // Step 2
+  // Step 2 — 5/3/1 skips starting weights
   document.getElementById('btn-back-2').addEventListener('click', () => goToStep(1));
   document.getElementById('btn-next-2').addEventListener('click', () => {
-    if (validateStep2()) goToStep(3);
+    if (validateStep2()) goToStep(currentProgram === '531' ? 4 : 3);
   });
 
   // Step 3 — no validation, always advances (skip or next)
@@ -350,7 +394,9 @@ function setupListeners() {
   document.getElementById('btn-advance-3').addEventListener('click', () => goToStep(4));
 
   // Step 4
-  document.getElementById('btn-back-4').addEventListener('click', () => goToStep(3));
+  document.getElementById('btn-back-4').addEventListener('click', () => {
+    goToStep(currentProgram === '531' ? 2 : 3);
+  });
   document.getElementById('btn-start').addEventListener('click', saveAndRedirect);
 
   // Enter key shortcuts

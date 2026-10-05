@@ -74,6 +74,47 @@
       margin-bottom: 32px;
     }
 
+    /* ---- Program choice (step 0) ---- */
+    .program-options {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .program-option {
+      width: 100%;
+      text-align: left;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      color: var(--cream);
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .program-option.selected {
+      border-color: var(--accent);
+      background: var(--surface-raised);
+    }
+
+    .program-option-name {
+      display: block;
+      font-size: var(--text-lg);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .program-option-desc {
+      display: block;
+      font-size: var(--text-sm);
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
     /* ---- Fields ---- */
     .ob-field {
       display: flex;
@@ -232,20 +273,47 @@
 <body>
   <div class="app-container">
 
-    <!-- Progress indicator — 4 steps -->
+    <!-- Progress indicator — 5 dots (4 shown when 5/3/1 skips starting weights) -->
     <header class="ob-header">
       <div class="progress-dots">
         <span class="pdot active" id="dot-0"></span>
         <span class="pdot"        id="dot-1"></span>
         <span class="pdot"        id="dot-2"></span>
         <span class="pdot"        id="dot-3"></span>
+        <span class="pdot"        id="dot-4"></span>
       </div>
     </header>
 
     <!-- ================================================
+         STEP 0 — Program choice
+         ================================================ -->
+    <section class="ob-step active" id="step-0">
+
+      <h2 class="ob-heading">Choose your program</h2>
+      <p class="ob-subtext">Pick the plan you want to follow. It can't be changed later for now.</p>
+
+      <div class="program-options" role="radiogroup" aria-label="Program">
+        <button class="program-option" type="button" role="radio" aria-checked="false" data-program="lite_viking">
+          <span class="program-option-name">Lite Viking</span>
+          <span class="program-option-desc">Two simple workouts, three lifts each. Add a little weight every session.</span>
+        </button>
+        <button class="program-option" type="button" role="radio" aria-checked="false" data-program="531">
+          <span class="program-option-name">5/3/1</span>
+          <span class="program-option-desc">One lift per workout, four lifts in rotation. A new target every week.</span>
+        </button>
+      </div>
+
+      <div class="ob-actions">
+        <p class="ob-error" id="error-0" role="alert"></p>
+        <button class="btn-primary" id="btn-next-0" type="button">Next</button>
+      </div>
+
+    </section>
+
+    <!-- ================================================
          STEP 1 — Name & Age
          ================================================ -->
-    <section class="ob-step active" id="step-1">
+    <section class="ob-step" id="step-1">
 
       <h2 class="ob-heading" id="step1-heading">Let's get you set up.</h2>
       <p class="ob-subtext">Just a few things to personalize your training.</p>
@@ -278,6 +346,7 @@
       <div class="ob-actions">
         <p class="ob-error" id="error-1" role="alert"></p>
         <button class="btn-primary" id="btn-next-1" type="button">Next</button>
+        <button class="btn-ghost ob-back" id="btn-back-1" type="button">Back</button>
       </div>
 
     </section>
@@ -439,8 +508,8 @@
   <script>
     document.addEventListener('click', function (e) {
       const container = document.querySelector('.app-container');
-      const backIds   = ['btn-back-2', 'btn-back-3', 'btn-back-4'];
-      const fwdIds    = ['btn-next-1', 'btn-next-2', 'btn-advance-3', 'btn-start'];
+      const backIds   = ['btn-back-1', 'btn-back-2', 'btn-back-3', 'btn-back-4'];
+      const fwdIds    = ['btn-next-0', 'btn-next-1', 'btn-next-2', 'btn-advance-3', 'btn-start'];
       const id        = e.target.closest('button')?.id;
       if (backIds.includes(id)) container.classList.add('going-back');
       if (fwdIds.includes(id))  container.classList.remove('going-back');

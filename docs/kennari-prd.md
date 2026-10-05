@@ -311,13 +311,18 @@ See `PRD-531.md` section 4. Not used by Lite Viking.
 - **Login:** email + password (show/hide toggle), all-caps labels, friendly error messages, back arrow to auth gate.
 - **Signup:** email + password (show/hide toggle), "Create account", back arrow to auth gate.
 
-### 9.2 Onboarding (`onboarding.html`) — 4 steps, shown once
-1. **Name + age** (heading personalizes as the name is typed)
+### 9.2 Onboarding (`onboarding.html`) — 5 steps, shown once
+0. **Choose your program:** two cards, Lite Viking and 5/3/1, each with a one-line description. No default; "Next" asks the user to choose. Saved as `profiles.active_program`. Cannot be changed later for now.
+1. **Name + age** (heading personalizes as the name is typed), with a Back button to step 0
 2. **Your body:** bodyweight (lbs/kg toggle) + barbell weight (default 45)
-3. **Starting weights:** one per exercise, optional. Button reads "Skip" until a field is filled, then "Next". Empty fields fall back to the barbell weight.
+3. **Starting weights** (Lite Viking only): one per exercise, optional. Button reads "Skip" until a field is filled, then "Next". Empty fields fall back to the barbell weight.
 4. **Your first goals:** auto-calculated from bodyweight, "Start Training" CTA
 
-Saves `profiles` (session_count 0), `starting_weights` (4 rows), `goals` (4 rows), then goes to `home.html`. If a profile already exists, redirects to `workout.html`.
+5/3/1 skips step 3 (test days replace starting weights) and the progress dots show 4 steps instead of 5.
+
+Saves `profiles` (session_count 0, `active_program`), `starting_weights` (4 rows, **Lite Viking only**), `goals` (4 rows, both programs), then goes to `home.html`. If a profile already exists, redirects to `workout.html`.
+
+Note: Home and Workout do not read `active_program` yet, so a 5/3/1 account is still served Lite Viking screens until those are built.
 
 ### 9.3 Home (`home.html`)
 - KENNARI wordmark
