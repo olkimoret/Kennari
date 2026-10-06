@@ -361,10 +361,53 @@
             <span class="spinner" aria-hidden="true"></span>
           </button>
           <p id="login-error" class="auth-error" role="alert"></p>
+          <button id="btn-go-forgot" class="btn-skip" type="button" style="display:block;margin:16px auto 0">
+            Forgot password?
+          </button>
         </div>
       </div>
 
     </div><!-- #screen-login -->
+
+    <!-- ══════════════════════════════════════════════════════════
+         SCREEN — FORGOT PASSWORD
+         ══════════════════════════════════════════════════════════ -->
+    <div id="screen-forgot" class="screen">
+
+      <div class="form-header">
+        <button id="btn-back-forgot" class="btn-back" type="button" aria-label="Back">←</button>
+      </div>
+
+      <div class="form-content">
+        <h2 class="form-heading">RESET PASSWORD</h2>
+
+        <div class="form-fields">
+          <div class="field-group">
+            <label class="label-caps" for="forgot-email">Email Address</label>
+            <input
+              id="forgot-email"
+              type="email"
+              class="input-field"
+              placeholder="Your email"
+              autocomplete="email"
+              autocapitalize="none"
+            />
+          </div>
+        </div>
+
+        <div class="form-cta">
+          <button id="btn-forgot" class="btn-primary" type="button">
+            <span class="btn-label">SEND RESET LINK</span>
+            <span class="spinner" aria-hidden="true"></span>
+          </button>
+          <p id="forgot-error" class="auth-error" role="alert"></p>
+          <p id="forgot-success" class="intro-text" style="display:none;margin-top:12px;text-align:center;font-size:var(--text-sm)">
+            If an account exists for that email, a reset link is on its way.
+          </p>
+        </div>
+      </div>
+
+    </div><!-- #screen-forgot -->
 
     <!-- ══════════════════════════════════════════════════════════
          SCREEN 4 — SIGNUP FORM
@@ -434,7 +477,7 @@
 
   <script type="module">
     import { redirectIfLoggedIn } from './app.js';
-    import { signIn, signUp }     from './supabase.js';
+    import { signIn, signUp, sendPasswordReset } from './supabase.js';
 
     // ================================================================
     // DOM refs
@@ -444,7 +487,8 @@
       intro:    document.getElementById('screen-intro'),
       authGate: document.getElementById('screen-auth-gate'),
       login:    document.getElementById('screen-login'),
-      signup:   document.getElementById('screen-signup'),
+      forgot:   document.getElementById('screen-forgot'),
+      signup:  document.getElementById('screen-signup'),
     };
 
     const slides = [
@@ -643,6 +687,37 @@
     }
 
     // ================================================================
+    // Forgot password
+    // ================================================================
+
+    const forgotEmailEl = document.getElementById('forgot-email');
+    const btnForgot     = document.getElementById('btn-forgot');
+    const forgotError   = document.getElementById('forgot-error');
+    const forgotSuccess = document.getElementById('forgot-success');
+
+    async function handleForgot() {
+      clearError(forgotError);
+      forgotSuccess.style.display = 'none';
+      const email = forgotEmailEl.value.trim();
+
+      if (!email) {
+        showError(forgotError, 'Please enter your email.');
+        return;
+      }
+
+      setLoading(btnForgot, true);
+      const { error } = await sendPasswordReset(email);
+      setLoading(btnForgot, false);
+
+      if (error) {
+        showError(forgotError, friendlyError(error));
+        return;
+      }
+
+      forgotSuccess.style.display = 'block';
+    }
+
+    // ================================================================
     // Sign up
     // ================================================================
 
@@ -713,6 +788,16 @@
       btnLogin.addEventListener('click', handleLogin);
       [loginEmailEl, loginPwEl].forEach(el =>
         el.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); }));
+
+      // Forgot password
+      document.getElementById('btn-go-forgot').addEventListener('click', () => {
+        forgotEmailEl.value = loginEmailEl.value;
+        showScreen(screens.forgot);
+      });
+      document.getElementById('btn-back-forgot').addEventListener('click',
+        () => showScreen(screens.login));
+      btnForgot.addEventListener('click', handleForgot);
+      forgotEmailEl.addEventListener('keydown', e => { if (e.key === 'Enter') handleForgot(); });
 
       // Signup form
       btnSignup.addEventListener('click', handleSignup);

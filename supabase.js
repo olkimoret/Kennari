@@ -40,6 +40,25 @@ export async function signOut() {
 }
 
 /**
+ * Email a password-reset link. The link lands on reset-password.html.
+ * Returns { error }
+ */
+export async function sendPasswordReset(email) {
+  const redirectTo = new URL('reset-password.html', window.location.href).href;
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+  return { error };
+}
+
+/**
+ * Set a new password for the current (recovery) session.
+ * Returns { error }
+ */
+export async function updatePassword(password) {
+  const { error } = await supabase.auth.updateUser({ password });
+  return { error };
+}
+
+/**
  * Get the currently authenticated user, or null.
  */
 export async function getUser() {
